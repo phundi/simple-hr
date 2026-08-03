@@ -1,0 +1,24 @@
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Employee Details</h1>
+    <div class="d-flex gap-2">
+      <% allow_download = ActiveModel::Type::Boolean.new.cast(ConfigService.get(current_user, current_company, "allow_payslip_download") || "true") %>
+      <% latest_payslip = @employee.payslips.joins(:pay_period).order("pay_periods.year DESC, pay_periods.month DESC").first %>
+      <% if allow_download && latest_payslip&.pdf_url.present? %>
+        <%= link_to "Download Payslip", latest_payslip.pdf_url, class: "btn btn-outline-success", target: "_blank", rel: "noopener" %>
+      <% end %>
+      <%= link_to "Edit", edit_employee_path(@employee), class: "btn btn-outline-primary" %>
+      <%= link_to "Back", employees_path, class: "btn btn-outline-secondary" %>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <p><strong>Name:</strong> <%= [@employee.first_name, @employee.last_name].join(" ") %></p>
+      <p><strong>Code:</strong> <%= @employee.employee_code %></p>
+      <p><strong>Department:</strong> <%= @employee.department.presence || "Unassigned" %></p>
+      <p><strong>Status:</strong> <%= (@employee.employment_status || "unknown").humanize %> / <%= (@employee.onboarding_status || "unknown").humanize %></p>
+      <p class="mb-0"><strong>Payment Method:</strong> <%= (@employee.payment_method || "not_set").humanize %></p>
+    </div>
+  </div>
+</div>

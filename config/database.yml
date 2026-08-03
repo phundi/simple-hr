@@ -1,0 +1,35 @@
+
+default: &default
+  adapter: mysql2
+  encoding: utf8mb4
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  username: root
+  password: root
+  socket: /var/run/mysqld/mysqld.sock
+
+development:
+  <<: *default
+  database: hr_development
+
+test:
+  <<: *default
+  database: hr_test
+
+production:
+  primary: &primary_production
+    <<: *default
+    database: hr_production
+    username: hr
+    password: <%= ENV["HR_DATABASE_PASSWORD"] %>
+  cache:
+    <<: *primary_production
+    database: hr_production_cache
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_production
+    database: hr_production_queue
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *primary_production
+    database: hr_production_cable
+    migrations_paths: db/cable_migrate

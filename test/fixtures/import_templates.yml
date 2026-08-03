@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  company: one
+  name: MyString
+  original_filename: MyString
+  column_mapping: 
+  required_columns: 
+  status: 1
+  created_by: 
+
+two:
+  company: two
+  name: MyString
+  original_filename: MyString
+  column_mapping: 
+  required_columns: 
+  status: 1
+  created_by: 

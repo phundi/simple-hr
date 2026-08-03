@@ -1,0 +1,136 @@
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+      <h1 class="h3 mb-1">Users</h1>
+      <p class="text-muted mb-0">Manage account status and invitations.</p>
+    </div>
+    <div>
+      <%= link_to "New User", new_user_path, class: "btn btn-primary" %>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0 d-none d-md-block">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @users.each do |user| %>
+              <% status_badge_class = case user.status
+                 when "active" then "bg-success-subtle text-success"
+                 when "blocked" then "bg-danger-subtle text-danger"
+                 else "bg-warning-subtle text-warning"
+                 end %>
+              <tr>
+                <td data-label="Name">
+                  <div class="fw-semibold"><%= [user.first_name, user.last_name].compact.join(" ") %></div>
+                </td>
+                <td data-label="Email"><%= user.email %></td>
+                <td data-label="Role"><%= user.role.to_s.humanize %></td>
+                <td data-label="Status">
+                  <span class="badge <%= status_badge_class %>"><%= user.status.humanize %></span>
+                </td>
+                <td data-label="Actions" class="text-end">
+                  <div class="d-flex flex-wrap gap-2 justify-content-end">
+                    <%= link_to "View", user_path(user), class: "btn btn-sm btn-outline-secondary" %>
+                    <%= link_to "Edit", edit_user_path(user), class: "btn btn-sm btn-outline-primary" %>
+                    <% if user.status_blocked? %>
+                      <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#userBlockModal-<%= user.id %>">Unblock</button>
+                    <% else %>
+                      <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#userBlockModal-<%= user.id %>">Block</button>
+                    <% end %>
+                    <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#userDeleteModal-<%= user.id %>">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-md-none d-grid gap-3">
+    <% @users.each do |user| %>
+      <% status_badge_class = case user.status
+         when "active" then "bg-success-subtle text-success"
+         when "blocked" then "bg-danger-subtle text-danger"
+         else "bg-warning-subtle text-warning"
+         end %>
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="fw-semibold"><%= [user.first_name, user.last_name].compact.join(" ").presence || "-" %></div>
+            <span class="badge <%= status_badge_class %>"><%= user.status.humanize %></span>
+          </div>
+          <div class="small text-muted mb-1"><strong>Email:</strong> <%= user.email %></div>
+          <div class="small text-muted mb-3"><strong>Role:</strong> <%= user.role.to_s.humanize %></div>
+          <div class="d-flex flex-wrap gap-2">
+            <%= link_to "View", user_path(user), class: "btn btn-sm btn-outline-secondary" %>
+            <%= link_to "Edit", edit_user_path(user), class: "btn btn-sm btn-outline-primary" %>
+            <% if user.status_blocked? %>
+              <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#userBlockModal-<%= user.id %>">Unblock</button>
+            <% else %>
+              <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#userBlockModal-<%= user.id %>">Block</button>
+            <% end %>
+            <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#userDeleteModal-<%= user.id %>">Delete</button>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <% @users.each do |user| %>
+    <% block_label = user.status_blocked? ? "Unblock" : "Block" %>
+    <% block_path = user.status_blocked? ? unblock_user_path(user) : block_user_path(user) %>
+    <% block_style = user.status_blocked? ? "btn-success" : "btn-danger" %>
+
+    <div class="modal fade" id="userBlockModal-<%= user.id %>" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><%= block_label %> User</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            Are you sure you want to <%= block_label.downcase %> <strong><%= [user.first_name, user.last_name].join(" ").strip.presence || user.email %></strong>?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <%= form_with url: block_path, method: :patch, local: true do %>
+              <%= submit_tag "#{block_label} User", class: "btn #{block_style}" %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="userDeleteModal-<%= user.id %>" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Delete User</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            This action cannot be undone. Delete <strong><%= [user.first_name, user.last_name].join(" ").strip.presence || user.email %></strong>?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <%= form_with url: user_path(user), method: :delete, local: true do %>
+              <%= submit_tag "Delete User", class: "btn btn-danger" %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,3 @@
+First Name,Last Name,Employee Code,Department,Job Title,Salary,Payment Method,Bank Name,Account Number,Mobile Money Number,Mobile Money Provider
+John,Banda,E001,Ops,Driver,150000,bank,NBM,12345678,,
+Mary,Phiri,E002,Finance,Accountant,350000,mobile_money,,,0888123456,airtel

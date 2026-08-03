@@ -1,0 +1,49 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  company: one
+  user: one
+  import_template: one
+  employee_code: MyString
+  first_name: MyString
+  last_name: MyString
+  department: MyString
+  job_title: MyString
+  salary: 9.99
+  hire_date: 2026-08-02
+  employment_status: 1
+  onboarding_status: 1
+  source_row: 1
+  bank_name: MyString
+  bank_branch: MyString
+  bank_account_number: MyString
+  account_type: 1
+  account_holder_name: MyString
+  swift_code: MyString
+  mobile_money_number: MyString
+  mobile_money_provider: 1
+  payment_method: 1
+
+two:
+  company: two
+  user: two
+  import_template: two
+  employee_code: MyString
+  first_name: MyString
+  last_name: MyString
+  department: MyString
+  job_title: MyString
+  salary: 9.99
+  hire_date: 2026-08-02
+  employment_status: 1
+  onboarding_status: 1
+  source_row: 1
+  bank_name: MyString
+  bank_branch: MyString
+  bank_account_number: MyString
+  account_type: 1
+  account_holder_name: MyString
+  swift_code: MyString
+  mobile_money_number: MyString
+  mobile_money_provider: 1
+  payment_method: 1

@@ -1,0 +1,23 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: MyString
+  logo_url: MyString
+  currency_code: MyString
+  currency_symbol: MyString
+  plan: 1
+  whatsapp_provider: MyString
+  whatsapp_api_key: MyString
+  email_from_name: MyString
+  email_from_address: MyString
+
+two:
+  name: MyString
+  logo_url: MyString
+  currency_code: MyString
+  currency_symbol: MyString
+  plan: 1
+  whatsapp_provider: MyString
+  whatsapp_api_key: MyString
+  email_from_name: MyString
+  email_from_address: MyString

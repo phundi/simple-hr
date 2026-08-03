@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  pay_period: one
+  employee: one
+  gross: 9.99
+  deductions: 9.99
+  net: 9.99
+  pdf_url: MyString
+
+two:
+  pay_period: two
+  employee: two
+  gross: 9.99
+  deductions: 9.99
+  net: 9.99
+  pdf_url: MyString

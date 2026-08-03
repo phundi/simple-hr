@@ -1,0 +1,38 @@
+<div class="container py-4" style="max-width: 560px;">
+  <div class="card shadow-sm">
+    <div class="card-body p-4">
+      <h2 class="h4 mb-4">Log in</h2>
+      <% configured_domain = SystemConfig.find_by(key: "main_domain")&.value.presence || "hr.com" %>
+      <% demo_host = "demo.#{configured_domain}" %>
+      <div class="alert alert-light border d-flex justify-content-between align-items-center py-2 px-3 mb-3">
+        <span class="small text-muted">Try demo environment</span>
+        <%= link_to "demo@#{configured_domain}", "https://#{demo_host}", class: "small fw-semibold", target: "_blank", rel: "noopener" %>
+      </div>
+
+      <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+  <div class="mb-3">
+    <%= f.label :email, class: "form-label" %>
+    <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :password, class: "form-label" %>
+    <%= f.password_field :password, autocomplete: "current-password", class: "form-control" %>
+  </div>
+
+  <% if devise_mapping.rememberable? %>
+    <div class="form-check mb-3">
+      <%= f.check_box :remember_me, class: "form-check-input" %>
+      <%= f.label :remember_me, class: "form-check-label" %>
+    </div>
+  <% end %>
+
+  <div class="d-grid mb-3">
+    <%= f.submit "Log in", class: "btn btn-primary" %>
+  </div>
+<% end %>
+
+<%= render "users/shared/links" %>
+    </div>
+  </div>
+</div>

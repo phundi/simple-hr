@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  company: one
+  month: 1
+  year: 1
+  status: 1
+  total_gross: 9.99
+  total_net: 9.99
+  currency_rate: 9.99
+
+two:
+  company: two
+  month: 1
+  year: 1
+  status: 1
+  total_gross: 9.99
+  total_net: 9.99
+  currency_rate: 9.99

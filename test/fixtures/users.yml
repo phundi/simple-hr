@@ -1,0 +1,35 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  company: one
+  first_name: MyString
+  last_name: MyString
+  email: MyString
+  phone_number: MyString
+  encrypted_password: MyString
+  role: 1
+  status: 1
+  onboarding_status: 1
+  verification_token: MyString
+  verification_sent_at: 2026-08-02 04:55:52
+  two_factor_enabled: false
+  two_factor_method: MyString
+  blocked_at: 2026-08-02 04:55:52
+  blocked_reason: MyString
+
+two:
+  company: two
+  first_name: MyString
+  last_name: MyString
+  email: MyString
+  phone_number: MyString
+  encrypted_password: MyString
+  role: 1
+  status: 1
+  onboarding_status: 1
+  verification_token: MyString
+  verification_sent_at: 2026-08-02 04:55:52
+  two_factor_enabled: false
+  two_factor_method: MyString
+  blocked_at: 2026-08-02 04:55:52
+  blocked_reason: MyString

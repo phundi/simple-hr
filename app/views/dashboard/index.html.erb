@@ -1,0 +1,84 @@
+<div class="container pb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+      <h1 class="h3 mb-1">Dashboard</h1>
+      <p class="text-muted mb-0">Payroll and employee snapshot for <%= @company.name %></p>
+    </div>
+    <div>
+      <% if @export_pay_periods.present? %>
+        <%= form_with url: bank_payment_schedule_report_path, method: :get, local: true, class: "d-flex flex-wrap align-items-center gap-2" do %>
+          <%= select_tag :pay_period_id,
+                options_from_collection_for_select(
+                  @export_pay_periods,
+                  :id,
+                  ->(period) { Date.new(period.year, period.month, 1).strftime("%b %Y") },
+                  @current_pay_period&.id || @export_pay_periods.first&.id
+                ),
+                class: "form-select form-select-sm",
+                aria: { label: "Payroll month" } %>
+          <%= submit_tag "Export Bank Schedule", class: "btn btn-primary btn-sm" %>
+        <% end %>
+      <% else %>
+        <button type="button" class="btn btn-secondary" disabled>No Pay Period to Export</button>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-body">
+          <p class="text-muted mb-1">Employees</p>
+          <div class="h4 mb-0"><%= @employees_count %></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-body">
+          <p class="text-muted mb-1">Payroll This Month</p>
+          <div class="h4 mb-0"><%= money(@payroll_this_month, company: @company) %></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-body">
+          <p class="text-muted mb-1">Pending Verification</p>
+          <div class="h4 mb-0"><%= @pending_verification_count %></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-body">
+          <p class="text-muted mb-1">Payroll Eligible</p>
+          <div class="h4 mb-0"><%= @payroll_eligible_count %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-12 col-xl-8">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <h2 class="h5 mb-3">Payroll Trend (Last 6 Months)</h2>
+          <%= line_chart @payroll_trend, height: "320px", colors: ["#0d6efd"], curve: false, points: false, xtitle: "Month", ytitle: "Net Payroll" %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-xl-4">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <h2 class="h5 mb-3">Employees by Department</h2>
+          <%= pie_chart @employees_by_department, height: "320px", donut: true %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -13,8 +13,6 @@
     <%= link_to(current_user&.super_admin? ? super_admin_dashboard_path : authenticated_root_path, class: "navbar-brand d-flex align-items-center gap-2") do %>
       <% if current_company&.logo&.attached? %>
         <%= image_tag current_company.logo, alt: "Company logo", class: "avatar avatar-lg" %>
-      <% else %>
-        <span class="avatar avatar-sm bg-primary-lt">IS</span>
       <% end %>
       <span class="fw-bold"><%= brand_name %></span>
     <% end %>

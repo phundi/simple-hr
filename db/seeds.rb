@@ -11,70 +11,60 @@
 system_configs = [
   {
     key: "main_domain",
-    data_type: "string",
     value: "hr.com",
     category: "General",
     description: "Base domain for company URLs. Example: hr.com"
   },
   {
     key: "app_name",
-    data_type: "string",
     value: "PayslipPro",
     category: "General",
     description: "Used in emails + header"
   },
   {
     key: "support_email",
-    data_type: "string",
     value: "support@hr.com",
     category: "Support",
     description: "Support contact"
   },
   {
     key: "smtp_address",
-    data_type: "string",
     value: "smtp.sendgrid.net",
     category: "Email",
     description: "System SMTP"
   },
   {
     key: "smtp_port",
-    data_type: "number",
     value: "587",
     category: "Email",
     description: "System SMTP Port"
   },
   {
     key: "enable_2fa",
-    data_type: "boolean",
     value: "false",
     category: "Security",
     description: "Allow 2FA for all companies"
   },
   {
     key: "allow_payslip_download",
-    data_type: "boolean",
     value: "true",
     category: "Payroll",
     description: "Employees can download PDF"
   },
   {
     key: "google_analytics_id",
-    data_type: "string",
     value: "",
     category: "Tracking",
     description: "G-XXXX for system wide GA"
   },
   {
     key: "enable_subdomain_redirect",
-    data_type: "boolean",
     value: "false",
     category: "Security",
     description: "If true, users are redirected to subdomain.company.com. If false, all users stay on main domain"
   },
   {
     key: "maintenance_mode",
-    data_type: "boolean",
     value: "false",
     category: "Security",
     description: "Lock system for admin only"

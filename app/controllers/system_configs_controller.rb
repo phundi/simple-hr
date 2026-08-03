@@ -31,19 +31,6 @@ class SystemConfigsController < ApplicationController
   end
 
   def system_config_params
-    attrs = params.require(:system_config).permit(:value)
-    attrs[:value] = normalize_value(@system_config.data_type, attrs[:value])
-    attrs
-  end
-
-  def normalize_value(data_type, raw_value)
-    case data_type
-    when "boolean"
-      ActiveModel::Type::Boolean.new.cast(raw_value) ? "true" : "false"
-    when "number"
-      raw_value.to_s.strip
-    else
-      raw_value.to_s
-    end
+    params.require(:system_config).permit(:value)
   end
 end

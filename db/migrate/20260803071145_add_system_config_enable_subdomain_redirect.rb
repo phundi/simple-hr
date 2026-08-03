@@ -7,7 +7,6 @@ class AddSystemConfigEnableSubdomainRedirect < ActiveRecord::Migration[8.1]
           VALUES (
             'enable_subdomain_redirect',
             'false',
-            'boolean',
             'Security',
             'If true, users are redirected to subdomain.company.com. If false, all users stay on main domain',
             NOW(),
@@ -15,7 +14,6 @@ class AddSystemConfigEnableSubdomainRedirect < ActiveRecord::Migration[8.1]
           )
           ON DUPLICATE KEY UPDATE
             value = VALUES(value),
-            data_type = VALUES(data_type),
             category = VALUES(category),
             description = VALUES(description),
             updated_at = VALUES(updated_at)

@@ -3,7 +3,6 @@ class CreateSystemConfigs < ActiveRecord::Migration[8.1]
     create_table :system_configs do |t|
       t.string :key, null: false
       t.text :value
-      t.string :data_type
       t.string :category
       t.text :description
 

@@ -3,7 +3,11 @@ class UsersController < ApplicationController
   before_action :ensure_authenticated_user!, only: [ :account, :update_account ]
 
   def index
-    @users = current_company.users.order(created_at: :desc)
+    @users = if current_user&.super_admin? && session[:super_admin_user_id].blank?
+      User.includes(:company).order(created_at: :desc)
+    else
+      current_company.users.order(created_at: :desc)
+    end
   end
 
   def show
@@ -124,7 +128,11 @@ class UsersController < ApplicationController
   end
 
   def set_user
-    @user = current_company.users.find(params[:id])
+    @user = if current_user&.super_admin? && session[:super_admin_user_id].blank?
+      User.find(params[:id])
+    else
+      current_company.users.find(params[:id])
+    end
   end
 
   def user_params

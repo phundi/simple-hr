@@ -1,38 +1,60 @@
-<div class="container py-4" style="max-width: 560px;">
-  <div class="card shadow-sm">
+<div class="container-xl py-5" style="max-width: 560px;">
+  <% app_name = SystemConfig.find_by(key: "app_name")&.value.presence || "HR" %>
+  <% configured_domain = SystemConfig.find_by(key: "main_domain")&.value.presence || "hr.com" %>
+  <% demo_host = "demo.#{configured_domain}" %>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title mb-0"><%= app_name %></h3>
+    </div>
     <div class="card-body p-4">
-      <h2 class="h4 mb-4">Log in</h2>
-      <% configured_domain = SystemConfig.find_by(key: "main_domain")&.value.presence || "hr.com" %>
-      <% demo_host = "demo.#{configured_domain}" %>
-      <div class="alert alert-light border d-flex justify-content-between align-items-center py-2 px-3 mb-3">
-        <span class="small text-muted">Try demo environment</span>
-        <%= link_to "demo@#{configured_domain}", "https://#{demo_host}", class: "small fw-semibold", target: "_blank", rel: "noopener" %>
+      <h2 class="h4 mb-4">Sign In</h2>
+
+      <div class="mt-4 mb-4 p-3 border rounded bg-light">
+        <p class="text-sm mb-2"><strong>Try it free.</strong> No signup needed</p>
+
+        <div class="d-flex gap-2">
+          <%= button_to "Admin", users_demo_sign_in_path(role: "admin"),
+              method: :post,
+              class: "btn btn-sm btn-dark flex-fill" %>
+          <%= button_to "HR", users_demo_sign_in_path(role: "hr"),
+              method: :post,
+              class: "btn btn-sm btn-primary flex-fill" %>
+          <%= button_to "Accountant", users_demo_sign_in_path(role: "accountant"),
+              method: :post,
+              class: "btn btn-sm btn-success flex-fill" %>
+        </div>
       </div>
 
       <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
-  <div class="mb-3">
-    <%= f.label :email, class: "form-label" %>
-    <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>
-  </div>
+        <div class="mb-3">
+          <%= f.label :email, class: "form-label" %>
+          <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>
+        </div>
 
-  <div class="mb-3">
-    <%= f.label :password, class: "form-label" %>
-    <%= f.password_field :password, autocomplete: "current-password", class: "form-control" %>
-  </div>
+        <div class="mb-3">
+          <%= f.label :password, class: "form-label" %>
+          <%= f.password_field :password, autocomplete: "current-password", class: "form-control" %>
+        </div>
 
-  <% if devise_mapping.rememberable? %>
-    <div class="form-check mb-3">
-      <%= f.check_box :remember_me, class: "form-check-input" %>
-      <%= f.label :remember_me, class: "form-check-label" %>
-    </div>
-  <% end %>
+        <% if devise_mapping.rememberable? %>
+          <div class="form-check mb-3">
+            <%= f.check_box :remember_me, class: "form-check-input" %>
+            <%= f.label :remember_me, class: "form-check-label" %>
+          </div>
+        <% end %>
 
-  <div class="d-grid mb-3">
-    <%= f.submit "Log in", class: "btn btn-primary" %>
-  </div>
-<% end %>
+        <div class="d-grid gap-2 mb-3">
+          <%= f.submit "Sign In", class: "btn btn-primary" %>
+          <%= link_to "Create New Company", signup_path, class: "btn btn-outline-secondary" %>
+        </div>
+      <% end %>
 
-<%= render "users/shared/links" %>
+      <%= render "users/shared/links" %>
+
+      <div class="mt-4 pt-3 border-top small text-muted">
+        Demo: <%= link_to "https://demo.hr.com", demo_login_path, class: "link-primary" %>
+      </div>
     </div>
   </div>
 </div>

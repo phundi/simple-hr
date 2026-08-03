@@ -1,6 +1,22 @@
 class DashboardController < ApplicationController
+  before_action :authenticate_user!
+  skip_before_action :set_current_company
+
+  def smart
+    if current_user&.super_admin?
+      redirect_to super_admin_dashboard_path
+    else
+      redirect_to company_dashboard_path
+    end
+  end
+
   def index
-    @company = current_company
+    @current_company = current_user.company
+    unless @current_company
+      redirect_to new_company_path, alert: "Please create your company first" and return
+    end
+
+    @company = @current_company
 
     @employees_count = @company.employees.count
     @payroll_eligible_count = @company.employees.payroll_eligible.count

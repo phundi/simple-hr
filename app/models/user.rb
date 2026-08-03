@@ -5,7 +5,7 @@ class User < ApplicationRecord
 
   has_one_attached :avatar
 
-  belongs_to :company
+  belongs_to :company, optional: true
   has_one :employee, dependent: :nullify
   has_many :created_import_templates, class_name: "ImportTemplate", foreign_key: :created_by, inverse_of: :creator, dependent: :nullify
   has_many :user_configs, dependent: :destroy
@@ -15,7 +15,13 @@ class User < ApplicationRecord
   validates :two_factor_method, presence: true, if: :two_factor_enabled?
   validate :two_factor_requires_pro_plan
 
-  enum :role, { admin: 0, hr: 1, accountant: 2 }
+  enum :role, {
+    employee: 0,
+    accountant: 1,
+    hr: 2,
+    admin: 3,
+    super_admin: 4
+  }
   enum :status, { active: 0, blocked: 1, invited: 2 }, prefix: true
   enum :onboarding_status, { unverified: 0, verified: 1 }, prefix: true
   enum :two_factor_method, { whatsapp_otp: "whatsapp_otp", authenticator: "authenticator" }, prefix: true
@@ -49,7 +55,11 @@ class User < ApplicationRecord
   end
 
   def full_name
-    [first_name, last_name].compact.join(" ").strip
+    [ first_name, last_name ].compact.join(" ").strip
+  end
+
+  def can_access_super_admin?
+    super_admin?
   end
 
   private

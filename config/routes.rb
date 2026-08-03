@@ -1,16 +1,46 @@
 Rails.application.routes.draw do
-  devise_for :users, skip: [ :registrations ]
+  main_domain = ConfigService.get(nil, nil, "main_domain").presence || "hr.com"
+  non_subdomain_host = lambda do |req|
+    host = req.host.to_s.downcase
+    host == main_domain || host.include?("localhost")
+  end
 
-  resources :companies, only: [ :new, :create ] do
+  devise_for :users, skip: [ :registrations ], controllers: { sessions: "users/sessions" }
+  devise_scope :user do
+    post "/users/demo_sign_in", to: "users/sessions#demo_sign_in", as: :demo_sign_in
+    post "/users/demo_sign_in", to: "users/sessions#demo_sign_in", as: :users_demo_sign_in
+  end
+
+  get "/signup", to: "companies#new", as: :signup
+  get "/companies/new", to: "companies#new", as: :new_company
+  get "/demo-login", to: "companies#demo_login", as: :demo_login
+  get "/companies/suggest_subdomain", to: "companies#suggest_subdomain"
+  post "companies/cancel", to: "companies#cancel", as: :cancel_company_setup
+
+  resources :companies, only: [ :create ] do
+    member do
+      get :setup_step1
+      post :setup_step1
+      get :setup_step2
+      post :setup_step2
+      get :setup_step3
+      post :setup_step3
+    end
+
     collection do
       get :setup
-      get :suggest_subdomain
     end
   end
 
   resources :system_configs, only: [ :index, :update ]
+  resources :system_settings, only: [ :index, :update ]
+  get "/super_admin/dashboard", to: "super_admin#index", as: :super_admin_dashboard
+  get "/super_admin/companies", to: "super_admin#index", as: :super_admin_companies
+  post "/super_admin/companies/:company_id/impersonate", to: "super_admin#impersonate", as: :impersonate_super_admin_company
+  post "/super_admin/stop_impersonating", to: "super_admin#stop_impersonating", as: :super_admin_stop_impersonating
   resources :company_configs, only: [ :index, :update ] do
     collection do
+      patch :update_theme
       post :create_property
       delete :destroy_property
     end
@@ -52,16 +82,17 @@ Rails.application.routes.draw do
 
   get "reports/bank_payment_schedule", to: "bank_payment_schedule#export", as: :bank_payment_schedule_report
 
-  get "dashboard", to: "dashboard#index"
+  get "dashboard", to: redirect("/")
+  get "/company_dashboard", to: "dashboard#index", as: :company_dashboard
   get "payroll", to: "pages#payroll"
   get "settings", to: "pages#settings"
 
-  authenticated :user do
-    root "dashboard#index", as: :authenticated_root
-  end
-
   unauthenticated do
     root to: redirect("/users/sign_in"), as: :unauthenticated_root
+  end
+
+  authenticated :user do
+    root to: "dashboard#smart", as: :authenticated_root
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

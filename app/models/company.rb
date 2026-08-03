@@ -24,6 +24,7 @@ class Company < ApplicationRecord
   enum :plan, { free: 0, pro: 1 }, default: :free
 
   validates :subdomain, presence: true, uniqueness: { case_sensitive: false }, format: { with: /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/, message: "allows only lowercase letters, numbers, and hyphens" }
+  validates :subdomain, exclusion: { in: %w[www app admin api demo], message: "is reserved" }
   validates :primary_color, format: { with: /\A#[0-9a-fA-F]{6}\z/, message: "must be a 6-digit hex color" }
 
   before_validation :normalize_subdomain

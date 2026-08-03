@@ -5,15 +5,44 @@ class ApplicationController < ActionController::Base
   # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
 
-  before_action :set_current_company
+  before_action :authenticate_user!, unless: :devise_controller?
+  before_action :set_current_company, if: :user_signed_in?
   # Temporarily disabled to keep navigation on localhost during local testing.
   # before_action :redirect_to_subdomain_host, if: :redirect_to_company_host?
   helper_method :current_company, :main_domain, :company_main_domain
 
+  def after_sign_in_path_for(resource)
+    user = resource.is_a?(User) ? resource : current_user
+    return authenticated_root_path if user&.super_admin?
+    return authenticated_root_path unless user&.company
+
+    if Rails.env.production? && user.company.subdomain == "demo"
+      "https://demo.#{ConfigService.get(nil,nil,'main_domain')}/dashboard"
+    else
+      authenticated_root_path
+    end
+  end
+
   private
 
   def set_current_company
-    @current_company = company_from_request_subdomain || company_from_current_user || default_company
+    return unless user_signed_in?
+
+    if current_user.super_admin? && session[:super_admin_user_id].blank?
+      @current_company = nil
+      return
+    end
+
+    if Rails.env.development? || request.host.to_s.include?("localhost")
+      @current_company = current_user.company
+      return
+    end
+
+    if request.host.to_s.start_with?("demo.")
+      @current_company = Company.find_by(subdomain: "demo")
+    else
+      @current_company = current_user.company
+    end
   end
 
   def current_company
@@ -33,23 +62,6 @@ class ApplicationController < ActionController::Base
     return nil if sub.blank?
 
     Company.find_by(subdomain: sub)
-  end
-
-  def company_from_current_user
-    current_user&.company
-  end
-
-  def extract_subdomain
-    host = request.host.to_s.downcase
-    return nil if host.blank? || host == "localhost" || host.match?(/\A\d+\.\d+\.\d+\.\d+\z/)
-
-    parts = host.split(".")
-    return nil if parts.size < 3
-
-    sub = parts.first
-    return nil if [ "www" ].include?(sub)
-
-    sub
   end
 
   def default_company

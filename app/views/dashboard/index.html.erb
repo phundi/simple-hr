@@ -67,7 +67,7 @@
       <div class="card shadow-sm border-0 h-100">
         <div class="card-body">
           <h2 class="h5 mb-3">Payroll Trend (Last 6 Months)</h2>
-          <%= line_chart @payroll_trend, height: "320px", colors: ["#0d6efd"], curve: false, points: false, xtitle: "Month", ytitle: "Net Payroll" %>
+          <%= line_chart @payroll_trend, height: "320px", colors: ["#0d6efd"], curve: false, points: false, xtitle: "Month", ytitle: "Net Payroll", discrete: true %>
         </div>
       </div>
     </div>

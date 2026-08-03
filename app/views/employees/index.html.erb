@@ -1,19 +1,14 @@
-<div class="container py-4">
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-      <h1 class="h3 mb-1">Employees</h1>
-      <p class="text-muted mb-0">Current employees and payroll eligibility status.</p>
+<div class="container-xl py-4">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Employees</h3>
+      <div class="card-actions d-flex gap-2">
+        <%= link_to "Import Employees", new_import_template_path, class: "btn btn-outline-secondary" %>
+        <%= link_to "Add New", new_employee_path, class: "btn btn-primary" %>
+      </div>
     </div>
-    <div class="d-flex flex-wrap gap-2">
-      <%= link_to "Import Employees", new_import_template_path, class: "btn btn-primary" %>
-      <%= link_to "New Employee", new_employee_path, class: "btn btn-outline-primary" %>
-    </div>
-  </div>
-
-  <div class="card shadow-sm border-0 d-none d-md-block">
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
           <thead>
             <tr>
               <th>Name</th>
@@ -57,42 +52,8 @@
               </tr>
             <% end %>
           </tbody>
-        </table>
-      </div>
+      </table>
     </div>
-  </div>
-
-  <div class="d-md-none d-grid gap-3">
-    <% @employees.each do |employee| %>
-      <% status_text, status_badge_class =
-        if employee.employment_status_blocked?
-          ["Blocked", "bg-danger-subtle text-danger"]
-        elsif employee.onboarding_status_unverified?
-          ["Unverified", "bg-warning-subtle text-warning"]
-        else
-          ["Active", "bg-success-subtle text-success"]
-        end %>
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div class="fw-semibold"><%= [employee.first_name, employee.last_name].compact.join(" ").presence || "-" %></div>
-            <span class="badge <%= status_badge_class %>"><%= status_text %></span>
-          </div>
-          <div class="small text-muted mb-1"><strong>Code:</strong> <%= employee.employee_code.presence || "-" %></div>
-          <div class="small text-muted mb-3"><strong>Department:</strong> <%= employee.department.presence || "Unassigned" %></div>
-          <div class="d-flex flex-wrap gap-2">
-            <%= link_to "View", employee_path(employee), class: "btn btn-sm btn-outline-secondary" %>
-            <%= link_to "Edit", edit_employee_path(employee), class: "btn btn-sm btn-outline-primary" %>
-            <% if employee.employment_status_blocked? %>
-              <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#employeeBlockModal-<%= employee.id %>">Unblock</button>
-            <% else %>
-              <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#employeeBlockModal-<%= employee.id %>">Block</button>
-            <% end %>
-            <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#employeeDeleteModal-<%= employee.id %>">Delete</button>
-          </div>
-        </div>
-      </div>
-    <% end %>
   </div>
 
   <% @employees.each do |employee| %>

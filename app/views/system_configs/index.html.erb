@@ -1,0 +1,67 @@
+<div class="container py-4">
+	<div class="d-flex justify-content-between align-items-center mb-4">
+		<h1 class="h4 mb-0">System Configurations</h1>
+		<span class="text-muted small">Admin only</span>
+	</div>
+
+	<% @grouped_configs.each do |category, configs| %>
+		<div class="card mb-4">
+			<div class="card-header">
+				<h2 class="card-title mb-0"><%= category %></h2>
+			</div>
+			<div class="table-responsive">
+				<table class="table table-vcenter card-table">
+					<thead>
+						<tr>
+							<th>Key</th>
+							<th>Type</th>
+							<th>Value</th>
+							<th>Description</th>
+							<th class="text-end">Action</th>
+						</tr>
+					</thead>
+					<tbody>
+						<% configs.each do |config| %>
+							<tr>
+								<td class="fw-semibold"><%= config.key %></td>
+								<td><span class="badge bg-secondary-lt text-secondary"><%= config.data_type %></span></td>
+								<td>
+									<%= form_with model: config, url: system_config_path(config), method: :patch, class: "d-flex align-items-center gap-2" do |f| %>
+										<% if config.data_type == "boolean" %>
+											<% checked = ActiveModel::Type::Boolean.new.cast(config.value) %>
+											<div class="form-check form-switch mb-0">
+												<%= f.check_box :value, { checked: checked, class: "form-check-input", id: "system_config_#{config.id}_value" }, "true", "false" %>
+												<%= f.label :value, checked ? "Yes" : "No", for: "system_config_#{config.id}_value", class: "form-check-label" %>
+											</div>
+										<% elsif config.data_type == "number" %>
+											<%= f.number_field :value, value: config.value, class: "form-control form-control-sm", required: true %>
+										<% elsif config.data_type == "text" %>
+											<%= f.text_area :value, value: config.value, class: "form-control form-control-sm", rows: 2 %>
+										<% else %>
+											<%= f.text_field :value, value: config.value, class: "form-control form-control-sm" %>
+										<% end %>
+
+										<%= f.submit "Save", class: "btn btn-sm btn-primary" %>
+									<% end %>
+								</td>
+								<td class="text-muted small"><%= config.description.presence || "-" %></td>
+								<td class="text-end text-muted small">Updated <%= time_ago_in_words(config.updated_at) %> ago</td>
+							</tr>
+						<% end %>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	<% end %>
+</div>
+
+<script>
+	document.addEventListener("turbo:load", function () {
+		document.querySelectorAll(".form-check-input").forEach(function (input) {
+			input.addEventListener("change", function () {
+				var label = input.closest(".form-check") && input.closest(".form-check").querySelector(".form-check-label");
+				if (label) label.textContent = input.checked ? "Yes" : "No";
+			});
+		});
+	});
+</script>

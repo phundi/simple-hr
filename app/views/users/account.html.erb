@@ -1,0 +1,95 @@
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">My Account</h1>
+  </div>
+
+  <% active_tab = params[:tab].presence_in(["profile", "security", "preferences"]) || "profile" %>
+
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><%= link_to "Profile", account_users_path(tab: "profile"), class: "nav-link #{active_tab == "profile" ? "active" : ""}" %></li>
+    <li class="nav-item"><%= link_to "Security", account_users_path(tab: "security"), class: "nav-link #{active_tab == "security" ? "active" : ""}" %></li>
+    <li class="nav-item"><%= link_to "Preferences", account_users_path(tab: "preferences"), class: "nav-link #{active_tab == "preferences" ? "active" : ""}" %></li>
+  </ul>
+
+  <div class="card shadow-sm border-0 rounded-3">
+    <div class="card-body">
+      <% if active_tab == "profile" %>
+        <%= form_with model: @account_user, url: update_account_users_path(tab: "profile"), method: :patch, local: true, class: "row g-3" do |f| %>
+          <div class="col-12">
+            <%= f.label :avatar, class: "form-label" %>
+            <%= f.file_field :avatar, class: "form-control", accept: "image/*" %>
+          </div>
+          <div class="col-md-6 form-floating">
+            <%= f.text_field :first_name, class: "form-control", placeholder: "First name" %>
+            <%= f.label :first_name %>
+          </div>
+          <div class="col-md-6 form-floating">
+            <%= f.text_field :last_name, class: "form-control", placeholder: "Last name" %>
+            <%= f.label :last_name %>
+          </div>
+          <div class="col-md-6 form-floating">
+            <%= f.text_field :phone_number, class: "form-control", placeholder: "Phone" %>
+            <%= f.label :phone_number, "Phone" %>
+          </div>
+          <div class="col-12">
+            <%= f.submit "Save Profile", class: "btn btn-primary rounded-2" %>
+          </div>
+        <% end %>
+      <% elsif active_tab == "security" %>
+        <%= form_with model: @account_user, url: update_account_users_path(tab: "security"), method: :patch, local: true, class: "row g-3" do |f| %>
+          <div class="col-md-6 form-floating">
+            <%= f.password_field :password, class: "form-control", placeholder: "New password", autocomplete: "new-password" %>
+            <%= f.label :password, "New Password" %>
+          </div>
+          <div class="col-md-6 form-floating">
+            <%= f.password_field :password_confirmation, class: "form-control", placeholder: "Confirm password", autocomplete: "new-password" %>
+            <%= f.label :password_confirmation, "Confirm Password" %>
+          </div>
+
+          <% if @enable_2fa %>
+            <div class="col-12">
+              <div class="form-check form-switch">
+                <%= f.check_box :two_factor_enabled, class: "form-check-input" %>
+                <%= f.label :two_factor_enabled, "Yes / No - Enable 2FA", class: "form-check-label" %>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :two_factor_method, class: "form-label" %>
+              <%= f.select :two_factor_method, User.two_factor_methods.keys.map { |k| [k.humanize, k] }, { include_blank: "Select method" }, class: "form-select" %>
+            </div>
+          <% else %>
+            <div class="col-12">
+              <div class="alert alert-info mb-0">2FA is disabled by system configuration.</div>
+            </div>
+          <% end %>
+
+          <div class="col-12">
+            <%= f.submit "Save Security", class: "btn btn-primary rounded-2" %>
+          </div>
+        <% end %>
+      <% else %>
+        <%= form_with url: update_account_users_path(tab: "preferences"), method: :patch, scope: :preferences, local: true, class: "row g-3" do |f| %>
+          <div class="col-md-4">
+            <div class="form-check form-switch">
+              <%= f.check_box :email_notifications, { class: "form-check-input", checked: ActiveModel::Type::Boolean.new.cast(@preferences[:email_notifications]) }, "true", "false" %>
+              <%= f.label :email_notifications, "Yes / No - Email notifications", class: "form-check-label" %>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-check form-switch">
+              <%= f.check_box :whatsapp_notifications, { class: "form-check-input", checked: ActiveModel::Type::Boolean.new.cast(@preferences[:whatsapp_notifications]) }, "true", "false" %>
+              <%= f.label :whatsapp_notifications, "Yes / No - WhatsApp notifications", class: "form-check-label" %>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <%= f.label :language, class: "form-label" %>
+            <%= f.select :language, [["English", "en"], ["French", "fr"], ["Swahili", "sw"]], { selected: @preferences[:language].presence || "en" }, class: "form-select" %>
+          </div>
+          <div class="col-12">
+            <%= f.submit "Save Preferences", class: "btn btn-primary rounded-2" %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>

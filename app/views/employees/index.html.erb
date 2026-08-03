@@ -4,7 +4,12 @@
       <h3 class="card-title">Employees</h3>
       <div class="card-actions d-flex gap-2">
         <%= link_to "Import Employees", new_import_template_path, class: "btn btn-outline-secondary" %>
-        <%= link_to "Add New", new_employee_path, class: "btn btn-primary" %>
+        <% if can_render?("export_employee_data") %>
+          <%= link_to "Export Employees", "#", class: "btn btn-outline-info" %>
+        <% end %>
+        <% if can_render?("manage_employees") %>
+          <%= link_to "Add New", new_employee_path, class: "btn btn-primary" %>
+        <% end %>
       </div>
     </div>
     <div class="table-responsive">

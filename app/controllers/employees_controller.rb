@@ -1,5 +1,10 @@
 class EmployeesController < ApplicationController
   before_action :set_employee, only: [ :show, :edit, :update, :destroy, :block, :unblock ]
+  # permission_key: manage_employees
+  before_action -> { authorize!("manage_employees") }, only: [ :new, :create, :edit, :update, :destroy, :block, :unblock ]
+  # permission_key: view_employee_sensitive
+  before_action -> { authorize!("view_employee_sensitive") }, only: [ :show ]
+  # permission_key: export_employee_data
 
   def index
     @employees = current_company.employees.order(created_at: :desc)

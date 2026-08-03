@@ -9,7 +9,7 @@ class ApplicationController < ActionController::Base
   before_action :set_current_company, if: :user_signed_in?
   # Temporarily disabled to keep navigation on localhost during local testing.
   # before_action :redirect_to_subdomain_host, if: :redirect_to_company_host?
-  helper_method :current_company, :main_domain, :company_main_domain
+  helper_method :current_company, :main_domain, :company_main_domain, :authorize!
 
   def after_sign_in_path_for(resource)
     user = resource.is_a?(User) ? resource : current_user
@@ -21,6 +21,17 @@ class ApplicationController < ActionController::Base
     else
       authenticated_root_path
     end
+  end
+
+  def authorize!(permission)
+    return if current_user&.super_admin?
+    return if current_user&.can?(permission)
+
+    redirect_to authenticated_root_path, alert: "You don't have permission to do that"
+  end
+
+  def authorize_permission!(perm)
+    authorize!(perm)
   end
 
   private

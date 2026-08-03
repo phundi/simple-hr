@@ -1,0 +1,47 @@
+<%= form_with url: companies_path(step: 2), method: :post, class: "row g-3" do %>
+  <div class="col-12">
+    <label for="company_primary_color" class="form-label">Primary color</label>
+    <%= color_field_tag "company[primary_color]", wizard_primary_color, id: "company_primary_color", class: "form-control form-control-color" %>
+  </div>
+
+  <div class="col-12">
+    <label for="company_logo" class="form-label">Company logo</label>
+    <%= file_field_tag "company[logo]", id: "company_logo", class: "form-control", accept: "image/*" %>
+    <%= hidden_field_tag "company[logo_signed_id]", wizard_logo_signed_id, id: "company_logo_signed_id" %>
+    <div class="form-text">Upload PNG/JPG. Recommended square image for sidebar display.</div>
+    <% if wizard_logo_signed_id.present? %>
+      <div class="small text-success mt-2">A logo is already staged for this setup.</div>
+    <% end %>
+    <img id="company_logo_preview" src="#" alt="Logo preview" class="img-thumbnail mt-2 d-none" style="max-height: 96px;" />
+  </div>
+
+  <div class="col-12 d-flex justify-content-between">
+    <%= link_to "Back", setup_companies_path(step: 1), class: "btn btn-outline-secondary" %>
+    <%= submit_tag "Continue", class: "btn btn-primary" %>
+  </div>
+<% end %>
+
+<script>
+  document.addEventListener("turbo:load", function () {
+    var logoInput = document.getElementById("company_logo");
+    var preview = document.getElementById("company_logo_preview");
+
+    if (!logoInput || !preview) return;
+
+    logoInput.addEventListener("change", function (event) {
+      var file = event.target.files && event.target.files[0];
+      if (!file) {
+        preview.classList.add("d-none");
+        preview.src = "#";
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+        preview.classList.remove("d-none");
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+</script>

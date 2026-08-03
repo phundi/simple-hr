@@ -1,0 +1,41 @@
+---
+roles:
+  admin:
+  - create_payroll
+  - delete_payroll
+  - edit_payroll
+  - export_bank_schedule
+  - export_employee_data
+  - export_paye_schedule
+  - export_payslips
+  - manage_company_profile
+  - manage_email_templates
+  - manage_employees
+  - manage_payroll_settings
+  - manage_roles
+  - manage_users
+  - process_payroll
+  - view_employee_sensitive
+  - view_payroll
+  - view_reports
+  hr:
+  - create_payroll
+  - delete_payroll
+  - edit_payroll
+  - export_employee_data
+  - export_paye_schedule
+  - export_payslips
+  - manage_employees
+  - manage_payroll_settings
+  - process_payroll
+  - view_employee_sensitive
+  - view_payroll
+  - view_reports
+  accountant:
+  - create_payroll
+  - export_bank_schedule
+  - export_paye_schedule
+  - process_payroll
+  - view_employee_sensitive
+  - view_payroll
+  - view_reports

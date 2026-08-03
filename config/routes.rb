@@ -41,6 +41,7 @@ Rails.application.routes.draw do
   resources :company_configs, only: [ :index, :update ] do
     collection do
       patch :update_theme
+      post :update_permissions
       post :create_property
       delete :destroy_property
     end
@@ -77,6 +78,14 @@ Rails.application.routes.draw do
     member do
       patch :block
       patch :unblock
+    end
+  end
+
+  namespace :admin do
+    resources :permissions, only: [ :index ] do
+      collection do
+        post :update
+      end
     end
   end
 

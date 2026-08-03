@@ -1,0 +1,214 @@
+<div class="container py-4">
+	<div class="d-flex justify-content-between align-items-center mb-4">
+		<h1 class="h4 mb-0">Company Settings</h1>
+		<span class="text-muted small"><%= current_company.name %></span>
+	</div>
+
+	<ul class="nav nav-tabs mb-3">
+		<li class="nav-item">
+			<%= link_to "General Settings", company_configs_path(tab: "general"), class: "nav-link #{@active_tab == "general" ? "active" : ""}" %>
+		</li>
+		<li class="nav-item">
+			<%= link_to "Dynamic Lists", company_configs_path(tab: "lists"), class: "nav-link #{@active_tab == "lists" ? "active" : ""}" %>
+		</li>
+		<% if current_user&.role == "admin" %>
+			<li class="nav-item">
+				<%= link_to "Permissions", company_configs_path(tab: "permissions"), class: "nav-link #{@active_tab == "permissions" ? "active" : ""}" %>
+			</li>
+		<% end %>
+	</ul>
+
+	<% if @active_tab == "general" %>
+		<div class="card shadow-sm border-0 rounded-3 mb-3">
+			<div class="card-body">
+				<h2 class="h6 mb-3">Theme Color</h2>
+				<%= form_with model: current_company, url: update_theme_company_configs_path, method: :patch, class: "row g-2 align-items-end", id: "theme-color-form" do |f| %>
+					<div class="col-12 col-md-3">
+						<label for="company_primary_color" class="form-label">Primary Color</label>
+						<%= f.color_field :primary_color, value: current_company.primary_color.presence || "#0d6efd", class: "form-control form-control-color w-100", id: "company_primary_color" %>
+					</div>
+					<div class="col-12 col-md-5">
+						<label for="company_primary_color_text" class="form-label">Hex Value</label>
+						<%= text_field_tag "theme_primary_color_text", current_company.primary_color.presence || "#0d6efd", class: "form-control", id: "company_primary_color_text", pattern: "#[0-9a-fA-F]{6}", placeholder: "#0d6efd", autocomplete: "off" %>
+						<div id="company_primary_color_error" class="invalid-feedback" style="display:none;">Enter a valid color in #RRGGBB format.</div>
+					</div>
+					<div class="col-12 col-md-4">
+						<%= f.submit "Save Theme", class: "btn btn-primary w-100" %>
+					</div>
+				<% end %>
+				<p class="text-muted small mt-2 mb-0">Used across the app brand color and navigation accents.</p>
+				<script>
+				  (function () {
+				    function bindThemeColorSync() {
+				      var form = document.getElementById("theme-color-form");
+				      var colorInput = document.getElementById("company_primary_color");
+				      var textInput = document.getElementById("company_primary_color_text");
+				      var errorEl = document.getElementById("company_primary_color_error");
+
+				      if (!form || !colorInput || !textInput || form.dataset.themeBound === "true") {
+				        return;
+				      }
+
+				      form.dataset.themeBound = "true";
+				      textInput.value = colorInput.value;
+
+				      function isValidHex(value) {
+				        return /^#[0-9a-fA-F]{6}$/.test(value);
+				      }
+
+				      function setValidityState(valid) {
+				        textInput.classList.toggle("is-invalid", !valid);
+				        if (errorEl) {
+				          errorEl.style.display = valid ? "none" : "block";
+				        }
+				      }
+
+				      colorInput.addEventListener("input", function () {
+				        textInput.value = colorInput.value;
+				        setValidityState(true);
+				      });
+
+				      textInput.addEventListener("input", function () {
+				        var next = textInput.value.trim();
+				        if (isValidHex(next)) {
+				          colorInput.value = next;
+				          setValidityState(true);
+				        } else {
+				          setValidityState(false);
+				        }
+				      });
+
+				      form.addEventListener("submit", function (event) {
+				        var next = textInput.value.trim();
+				        if (isValidHex(next)) {
+				          colorInput.value = next;
+				          setValidityState(true);
+				        } else {
+				          event.preventDefault();
+				          setValidityState(false);
+				        }
+				      });
+
+				      setValidityState(isValidHex(textInput.value.trim()));
+				    }
+
+				    document.addEventListener("DOMContentLoaded", bindThemeColorSync);
+				    document.addEventListener("turbo:load", bindThemeColorSync);
+				  })();
+				</script>
+			</div>
+		</div>
+
+		<div class="card shadow-sm border-0 rounded-3">
+			<div class="card-body">
+				<div class="table-responsive">
+					<table class="table align-middle mb-0">
+						<thead>
+							<tr>
+								<th>Key</th>
+								<th>Type</th>
+								<th>Value</th>
+							</tr>
+						</thead>
+						<tbody>
+							<% @company_configs.each do |config| %>
+								<tr>
+									<td class="fw-semibold"><%= config.key %></td>
+									<td><span class="badge text-bg-light"><%= config.data_type %></span></td>
+									<td>
+										<%= form_with model: config, url: company_config_path(config), method: :patch, class: "d-flex gap-2 align-items-center" do |f| %>
+											<% if config.data_type == "boolean" %>
+												<% checked = ActiveModel::Type::Boolean.new.cast(config.value) %>
+												<%= f.select :value, [["Yes", "true"], ["No", "false"]], { selected: checked ? "true" : "false" }, class: "form-select form-select-sm" %>
+											<% elsif config.data_type == "text" %>
+												<%= f.text_area :value, value: config.value, class: "form-control form-control-sm", rows: 2 %>
+											<% else %>
+												<%= f.text_field :value, value: config.value, class: "form-control form-control-sm" %>
+											<% end %>
+											<%= f.submit "Save", class: "btn btn-sm btn-primary" %>
+										<% end %>
+									</td>
+								</tr>
+							<% end %>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	<% elsif @active_tab == "lists" %>
+		<div class="card shadow-sm border-0 rounded-3 mb-3">
+			<div class="card-body">
+				<h2 class="h6">Add List Item</h2>
+				<%= form_with url: create_property_company_configs_path, method: :post, class: "row g-2 align-items-end" do |f| %>
+					<div class="col-md-4">
+						<label for="company_property_property_key" class="form-label">List Type</label>
+						<%= select_tag "company_property[property_key]", options_for_select(CompanyProperty::PROPERTY_KEYS.map { |k| [k.humanize, k] }), class: "form-select", id: "company_property_property_key" %>
+					</div>
+					<div class="col-md-6">
+						<label for="company_property_value" class="form-label">Value</label>
+						<%= text_field_tag "company_property[value]", nil, class: "form-control", id: "company_property_value", placeholder: "e.g. Finance", required: true %>
+					</div>
+					<div class="col-md-2">
+						<%= submit_tag "Add", class: "btn btn-primary w-100" %>
+					</div>
+				<% end %>
+			</div>
+		</div>
+
+		<div class="row g-3">
+			<% CompanyProperty::PROPERTY_KEYS.each do |key| %>
+				<div class="col-12 col-lg-4">
+					<div class="card shadow-sm border-0 rounded-3 h-100">
+						<div class="card-body">
+							<h3 class="h6"><%= key.humanize %></h3>
+							<div class="d-flex flex-wrap gap-2 mt-3">
+								<% (@property_groups[key] || []).each do |prop| %>
+									<span class="badge rounded-pill text-bg-light d-inline-flex align-items-center gap-2 px-3 py-2">
+										<span><%= prop.value %></span>
+										<%= button_to "x", destroy_property_company_configs_path(id: prop.id), method: :delete, form: { class: "d-inline" }, class: "btn btn-sm btn-link text-danger text-decoration-none p-0", data: { turbo_confirm: "Remove this item?" } %>
+									</span>
+								<% end %>
+							</div>
+						</div>
+					</div>
+				</div>
+			<% end %>
+		</div>
+	<% else %>
+		<div class="card shadow-sm border-0 rounded-3">
+			<div class="card-body">
+				<%= form_with url: update_permissions_company_configs_path, method: :post, local: true do %>
+					<div class="table-responsive">
+						<table class="table table-bordered align-middle mb-3">
+							<thead class="table-light">
+								<tr>
+									<th style="min-width: 260px;">Permission</th>
+									<% CompanyConfigsController::ROLES.each do |role| %>
+										<th class="text-center text-capitalize"><%= role %></th>
+									<% end %>
+								</tr>
+							</thead>
+							<tbody>
+								<% CompanyConfigsController::PERMISSIONS.each do |permission_key| %>
+									<tr>
+										<td class="fw-semibold"><%= permission_key.humanize %></td>
+										<% CompanyConfigsController::ROLES.each do |role| %>
+											<% checked = @permission_matrix[[permission_key, role]] == true %>
+											<td class="text-center">
+												<input type="checkbox" class="form-check-input" name="permissions[<%= permission_key %>][<%= role %>]" value="1" <%= "checked" if checked %>>
+											</td>
+										<% end %>
+									</tr>
+								<% end %>
+							</tbody>
+						</table>
+					</div>
+
+					<div class="d-flex justify-content-end">
+						<button type="submit" class="btn btn-primary">Save Permissions</button>
+					</div>
+				<% end %>
+			</div>
+		</div>
+	<% end %>
+</div>

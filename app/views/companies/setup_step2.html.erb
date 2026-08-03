@@ -1,0 +1,99 @@
+<div class="container-xl py-4" style="max-width: 760px;">
+  <% default_color = @wizard_primary_color.presence || "#206bc4" %>
+  <% existing_logo_url = nil %>
+  <% if @wizard_logo_signed_id.present? %>
+    <% begin %>
+      <% existing_logo_url = url_for(ActiveStorage::Blob.find_signed(@wizard_logo_signed_id)) %>
+    <% rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound %>
+      <% existing_logo_url = nil %>
+    <% end %>
+  <% end %>
+
+  <div class="card" data-controller="logo-preview">
+    <div class="card-header">
+      <h3 class="card-title mb-0">Branding Setup</h3>
+    </div>
+
+    <%= form_with url: setup_step2_company_path(params[:id]), method: :post, local: true, scope: :company, html: { multipart: true } do |f| %>
+      <div class="card-body">
+        <%= f.hidden_field :logo_signed_id, value: @wizard_logo_signed_id %>
+
+        <div class="mb-3">
+          <%= f.label :logo, "Company Logo", class: "form-label" %>
+          <%= f.file_field :logo,
+              class: "form-control",
+              accept: ".jpg,.jpeg,.png,image/jpeg,image/png",
+              data: { action: "change->logo-preview#preview", logo_preview_target: "input" } %>
+          <div class="form-text">Accepted formats: JPG, PNG.</div>
+        </div>
+
+        <div class="mb-4">
+          <div class="border rounded p-3 d-inline-flex align-items-center justify-content-center" style="width: 180px; height: 140px; background: var(--tblr-bg-surface-secondary);">
+            <img
+              data-logo-preview-target="image"
+              src="<%= existing_logo_url.to_s %>"
+              alt="Logo preview"
+              class="img-fluid <%= existing_logo_url.present? ? "" : "d-none" %>"
+              style="max-height: 120px;"
+            >
+            <span data-logo-preview-target="placeholder" class="text-muted small <%= existing_logo_url.present? ? "d-none" : "" %>">No logo selected</span>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <%= f.label :primary_color, "Primary Color", class: "form-label" %>
+          <%= f.color_field :primary_color, value: default_color, class: "form-control form-control-color", style: "width: 4rem;" %>
+          <div class="form-text">This color will be used for buttons and theme</div>
+        </div>
+      </div>
+
+      <div class="card-footer d-flex justify-content-between">
+        <%= link_to "Cancel", cancel_company_setup_path, class: "btn btn-outline-secondary", data: { turbo_method: :post, turbo_confirm: "Are you sure? All progress will be lost." } %>
+        <%= submit_tag "Continue", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script type="module">
+  import { Application, Controller } from "https://esm.sh/@hotwired/stimulus@3.2.2";
+
+  if (!window.companySetupStimulusApp) {
+    window.companySetupStimulusApp = Application.start();
+  }
+
+  class LogoPreviewController extends Controller {
+    static targets = ["input", "image", "placeholder"];
+
+    preview(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const validTypes = ["image/jpeg", "image/png"];
+      if (!validTypes.includes(file.type)) {
+        this.inputTarget.value = "";
+        this.showPlaceholder();
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imageTarget.src = e.target.result;
+        this.imageTarget.classList.remove("d-none");
+        this.placeholderTarget.classList.add("d-none");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    showPlaceholder() {
+      this.imageTarget.src = "";
+      this.imageTarget.classList.add("d-none");
+      this.placeholderTarget.classList.remove("d-none");
+    }
+  }
+
+  if (!window.companySetupStimulusRegistered) {
+    window.companySetupStimulusApp.register("logo-preview", LogoPreviewController);
+    window.companySetupStimulusRegistered = true;
+  }
+</script>

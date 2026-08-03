@@ -1,0 +1,68 @@
+<% configured_domain = ConfigService.get(nil, nil, "main_domain").presence || "hr.com" %>
+<div class="container-xl py-4" style="max-width: 760px;" data-controller="subdomain" data-main-domain="<%= configured_domain %>">
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title mb-0">Create Your Company</h3>
+    </div>
+
+    <%= form_with url: setup_step1_company_path(params[:id]), method: :post, local: true, scope: :company do |f| %>
+      <div class="card-body">
+        <div class="mb-3">
+          <%= f.label :name, "Company Name", class: "form-label" %>
+          <%= f.text_field :name,
+              value: @wizard_name,
+              required: true,
+              class: "form-control",
+              id: "company-name-input",
+              placeholder: "Acme Limited",
+              data: {
+                subdomain_target: "nameInput",
+                action: "input->subdomain#suggest"
+              } %>
+          <div class="mt-2" id="subdomain-suggestions" data-subdomain-target="suggestions">
+            <% Array(@suggestions).first(3).each do |suggestion| %>
+              <button type="button" class="btn btn-outline-primary btn-sm me-2 mb-2" data-action="click->subdomain#select"><%= suggestion %></button>
+            <% end %>
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <label for="company-subdomain-input" class="form-label">Subdomain</label>
+          <div class="input-group">
+            <span class="input-group-text">https://</span>
+            <%= f.text_field :subdomain,
+                value: @wizard_subdomain,
+                required: true,
+                class: "form-control",
+                id: "company-subdomain-input",
+                placeholder: "acme-limited",
+                data: { subdomain_target: "subdomainInput" } %>
+            <span class="input-group-text">.</span>
+            <span class="input-group-text"><%= configured_domain %></span>
+          </div>
+          <div id="subdomain-feedback" class="form-text mt-1">Use letters, numbers, and hyphens only.</div>
+        </div>
+      </div>
+
+      <div class="card-footer d-flex justify-content-between">
+        <%= link_to "Cancel", cancel_company_setup_path, class: "btn btn-outline-secondary", data: { turbo_method: :post, turbo_confirm: "Are you sure? All progress will be lost." } %>
+        <%= submit_tag "Continue", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script type="module">
+  import { Application } from "https://esm.sh/@hotwired/stimulus@3.2.2";
+  import SubdomainController from "/javascripts/controllers/subdomain_controller.js";
+
+  if (!window.hrStimulusApp) {
+    window.hrStimulusApp = Application.start();
+  }
+
+  if (!window.hrSubdomainControllerRegistered) {
+    window.hrStimulusApp.register("subdomain", SubdomainController);
+    window.hrSubdomainControllerRegistered = true;
+  }
+</script>

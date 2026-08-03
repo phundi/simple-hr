@@ -37,8 +37,7 @@
     <div class="col-md-6">
       <div class="mb-3">
         <%= f.label :role, class: "form-label" %>
-        <% allowed_roles = User.roles.keys - [ "super_admin" ] %>
-        <%= f.select :role, allowed_roles.map { |k| [k.humanize, k] }, {}, class: "form-select" %>
+        <%= f.select :role, User.roles.keys.map { |k| [k.humanize, k] }, {}, class: "form-select" %>
       </div>
     </div>
     <div class="col-md-6">

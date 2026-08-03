@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  company: one
+  property_key: MyString
+  value: MyString
+  position: 1
+
+two:
+  company: two
+  property_key: MyString
+  value: MyString
+  position: 1

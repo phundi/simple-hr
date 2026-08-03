@@ -1,0 +1,90 @@
+<div class="container-xl py-4" style="max-width: 900px;">
+  <% logo_preview_url = nil %>
+  <% if @wizard_logo_signed_id.present? %>
+    <% begin %>
+      <% logo_preview_url = url_for(ActiveStorage::Blob.find_signed(@wizard_logo_signed_id)) %>
+    <% rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound %>
+      <% logo_preview_url = nil %>
+    <% end %>
+  <% end %>
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title mb-0">Create Admin Account</h3>
+        </div>
+
+        <%= form_with url: companies_path, method: :post, local: true, scope: :company do |f| %>
+          <div class="card-body">
+            <%= hidden_field_tag :step, 3 %>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= f.label :admin_first_name, "First Name", class: "form-label" %>
+                  <%= f.text_field :admin_first_name, value: @admin_first_name, required: true, class: "form-control" %>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= f.label :admin_last_name, "Last Name", class: "form-label" %>
+                  <%= f.text_field :admin_last_name, value: @admin_last_name, required: true, class: "form-control" %>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="mb-3">
+                  <%= f.label :admin_email, "Email", class: "form-label" %>
+                  <%= f.email_field :admin_email, value: @admin_email, required: true, class: "form-control", autocomplete: "email" %>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="mb-3">
+                  <%= f.label :admin_password, "Password", class: "form-label" %>
+                  <%= f.password_field :admin_password, required: true, class: "form-control", autocomplete: "new-password" %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer d-flex justify-content-between">
+            <%= link_to "Cancel", cancel_company_setup_path, class: "btn btn-outline-secondary", data: { turbo_method: :post, turbo_confirm: "Are you sure? All progress will be lost." } %>
+            <%= submit_tag "Create Company", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title mb-0">Review</h3>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-5 text-muted">Company Name</dt>
+            <dd class="col-sm-7 fw-semibold"><%= @wizard_name.presence || "-" %></dd>
+
+            <dt class="col-sm-5 text-muted">Domain</dt>
+            <dd class="col-sm-7 fw-semibold"><%= [@wizard_subdomain.presence || "-", main_domain].join(".") %></dd>
+
+            <dt class="col-sm-5 text-muted">Logo</dt>
+            <dd class="col-sm-7">
+              <% if logo_preview_url.present? %>
+                <img src="<%= logo_preview_url %>" alt="Logo preview" class="img-fluid rounded border" style="max-height: 64px;">
+              <% else %>
+                <span class="text-muted">No logo uploaded</span>
+              <% end %>
+            </dd>
+
+            <dt class="col-sm-5 text-muted">Primary Color</dt>
+            <dd class="col-sm-7 d-flex align-items-center gap-2">
+              <span class="rounded border" style="display:inline-block;width:20px;height:20px;background:<%= @wizard_primary_color.presence || "#206bc4" %>;"></span>
+              <span class="fw-semibold"><%= @wizard_primary_color.presence || "#206bc4" %></span>
+            </dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

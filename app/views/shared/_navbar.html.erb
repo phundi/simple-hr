@@ -1,0 +1,83 @@
+<header class="navbar navbar-expand-lg navbar-light d-print-none border-bottom">
+  <div class="container-xl">
+    <% brand_name = if current_user&.super_admin?
+      "PayslipPro Platform"
+    elsif current_company&.name.present?
+      current_company.name
+    elsif current_user&.company&.name.present?
+      current_user.company.name
+    else
+      "PayslipPro"
+    end %>
+
+    <%= link_to(current_user&.super_admin? ? super_admin_dashboard_path : authenticated_root_path, class: "navbar-brand d-flex align-items-center gap-2") do %>
+      <% if current_company&.logo&.attached? %>
+        <%= image_tag current_company.logo, alt: "Company logo", class: "avatar avatar-lg" %>
+      <% else %>
+        <span class="avatar avatar-sm bg-primary-lt">IS</span>
+      <% end %>
+      <span class="fw-bold"><%= brand_name %></span>
+    <% end %>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#top-navbar-menu" aria-controls="top-navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="top-navbar-menu">
+      <ul class="navbar-nav me-auto">
+        <% if current_user&.super_admin? %>
+        <% else %>
+          <li class="nav-item"><%= link_to "Employees", employees_path, class: "nav-link" %></li>
+          <% if can_render?("manage_users") %>
+            <li class="nav-item"><%= link_to "Users", users_path, class: "nav-link" %></li>
+          <% end %>
+          <li class="nav-item"><%= link_to "Payroll", payroll_path, class: "nav-link" %></li>
+          <li class="nav-item"><%= link_to "Import", new_import_template_path, class: "nav-link" %></li>
+        <% end %>
+      </ul>
+
+      <ul class="navbar-nav ms-lg-3 align-items-lg-center gap-lg-2">
+        <li class="nav-item">
+          <button type="button" id="theme-toggle" class="btn btn-outline-secondary" aria-label="Toggle dark mode">
+            <i id="theme-toggle-icon" class="ti ti-moon"></i>
+          </button>
+        </li>
+
+        <% if current_user&.admin? %>
+          <li class="nav-item">
+            <% settings_path = current_user&.super_admin? ? system_configs_path : company_configs_path(tab: "general") %>
+            <%= link_to settings_path, class: "nav-link d-flex align-items-center gap-1" do %>
+              <i class="ti ti-settings" aria-hidden="true"></i>
+              <span>Settings</span>
+            <% end %>
+          </li>
+        <% end %>
+
+        <li class="nav-item dropdown">
+          <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
+            <% if current_user.avatar.attached? %>
+              <%= image_tag current_user.avatar, alt: "User avatar", class: "avatar rounded-circle user-avatar-img" %>
+            <% else %>
+              <span class="avatar bg-primary-lt rounded-circle"><%= current_user.first_name.to_s.first&.upcase || "U" %></span>
+            <% end %>
+            <div class="d-none d-xl-block ps-2">
+              <div><%= current_user.full_name.presence || current_user.email %></div>
+              <div class="small fst-italic" style="color: var(--tblr-primary);"><%= current_user.email %></div>
+            </div>
+            <div class="d-none d-xl-flex ps-2 text-muted align-items-center">
+              <i class="ti ti-chevron-down" aria-hidden="true"></i>
+            </div>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+            <%= link_to "My Account", account_users_path, class: "dropdown-item" %>
+            <% if session[:super_admin_user_id].present? %>
+              <%= button_to "Stop Impersonating", super_admin_stop_impersonating_path, method: :post, class: "dropdown-item text-start border-0 bg-transparent w-100 text-warning" %>
+            <% end %>
+            <div class="dropdown-divider"></div>
+            <%= button_to "Logout", destroy_user_session_path, method: :delete, class: "dropdown-item text-start border-0 bg-transparent w-100" %>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</header>

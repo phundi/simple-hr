@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_03_092619) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_03_121600) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -151,6 +151,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_092619) do
     t.index ["pay_period_id"], name: "index_payslips_on_pay_period_id"
   end
 
+  create_table "role_permissions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: false, null: false
+    t.string "permission_key", null: false
+    t.string "role", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "role", "permission_key"], name: "idx_role_permissions_company_role_key", unique: true
+    t.index ["company_id"], name: "index_role_permissions_on_company_id"
+  end
+
   create_table "system_configs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "category"
     t.datetime "created_at", null: false
@@ -189,6 +200,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_092619) do
     t.string "reset_password_token"
     t.integer "role", default: 0, null: false
     t.integer "status", default: 0, null: false
+    t.boolean "super_admin", default: false, null: false
     t.boolean "two_factor_enabled", default: false, null: false
     t.string "two_factor_method"
     t.datetime "updated_at", null: false
@@ -212,6 +224,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_092619) do
   add_foreign_key "pay_periods", "companies"
   add_foreign_key "payslips", "employees"
   add_foreign_key "payslips", "pay_periods"
+  add_foreign_key "role_permissions", "companies"
   add_foreign_key "user_configs", "users"
   add_foreign_key "users", "companies"
 end

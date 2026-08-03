@@ -1,6 +1,8 @@
 class UsersController < ApplicationController
   before_action :set_user, only: [ :show, :edit, :update, :destroy, :block, :unblock, :resend_invite ]
   before_action :ensure_authenticated_user!, only: [ :account, :update_account ]
+  # permission_key: manage_users
+  before_action -> { authorize!("manage_users") }, only: [ :new, :create, :edit, :update, :destroy, :index ]
 
   def index
     @users = if current_user&.super_admin? && session[:super_admin_user_id].blank?

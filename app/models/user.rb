@@ -9,6 +9,7 @@ class User < ApplicationRecord
   has_one :employee, dependent: :nullify
   has_many :created_import_templates, class_name: "ImportTemplate", foreign_key: :created_by, inverse_of: :creator, dependent: :nullify
   has_many :user_configs, dependent: :destroy
+  has_many :role_permissions, through: :company
 
   validates :first_name, presence: true
   validates :last_name, presence: true
@@ -16,11 +17,9 @@ class User < ApplicationRecord
   validate :two_factor_requires_pro_plan
 
   enum :role, {
-    employee: 0,
-    accountant: 1,
-    hr: 2,
-    admin: 3,
-    super_admin: 4
+    admin: 0,
+    hr: 1,
+    accountant: 2
   }
   enum :status, { active: 0, blocked: 1, invited: 2 }, prefix: true
   enum :onboarding_status, { unverified: 0, verified: 1 }, prefix: true
@@ -60,6 +59,18 @@ class User < ApplicationRecord
 
   def can_access_super_admin?
     super_admin?
+  end
+
+  def can?(permission_key)
+    return true if super_admin?
+    return false if company_id.blank? || role.blank? || permission_key.blank?
+
+    RolePermission.exists?(
+      company_id: company_id,
+      role: role,
+      permission_key: permission_key.to_s,
+      enabled: true
+    )
   end
 
   private

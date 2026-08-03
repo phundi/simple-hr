@@ -1,4 +1,8 @@
 module ApplicationHelper
+  def can_render?(perm)
+    current_user&.can?(perm)
+  end
+
   def money(amount, company: nil, precision: 2)
     symbol = company&.currency_symbol.presence || "MK"
     value = amount || 0

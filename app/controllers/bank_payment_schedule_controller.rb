@@ -1,7 +1,14 @@
 class BankPaymentScheduleController < ApplicationController
+  # permission_key: export_bank_schedule
+  before_action -> { authorize!("export_bank_schedule") }
+
   def export
     pay_period = selected_pay_period
-    xlsx_data = generate_xlsx(pay_period)
+    xlsx_data = ExportBankScheduleService.new(
+      user: current_user,
+      company: current_company,
+      pay_period: pay_period
+    ).call
 
     send_data xlsx_data,
               type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -17,36 +24,6 @@ class BankPaymentScheduleController < ApplicationController
       current_company.pay_periods.published.order(year: :desc, month: :desc).first ||
         current_company.pay_periods.order(year: :desc, month: :desc).first
     end
-  end
-
-  def generate_xlsx(pay_period)
-    package = Axlsx::Package.new
-    workbook = package.workbook
-
-    workbook.add_worksheet(name: "Bank Schedule") do |sheet|
-      sheet.add_row [ "Employee Code", "Name", "Bank", "Account", "Net Pay" ]
-
-      if pay_period
-        pay_period.payslips
-                  .includes(:employee)
-                  .where(employees: { payment_method: Employee.payment_methods[:bank] })
-                  .references(:employees)
-                  .find_each do |payslip|
-          employee = payslip.employee
-          next unless employee
-
-          sheet.add_row [
-            employee.employee_code,
-            [ employee.first_name, employee.last_name ].compact.join(" ").strip,
-            employee.bank_name,
-            employee.bank_account_number,
-            payslip.net.to_d.to_f
-          ]
-        end
-      end
-    end
-
-    package.to_stream.read
   end
 
   def export_filename(pay_period)

@@ -1,0 +1,109 @@
+<%= form_with url: companies_path(step: 1), method: :post, class: "row g-3", data: { suggest_url: suggest_subdomain_companies_path } do %>
+  <div class="col-12">
+    <label for="company_name" class="form-label">Company name</label>
+    <%= text_field_tag "company[name]", wizard_name, id: "company_name", class: "form-control", placeholder: "Acme Ltd", required: true, autocomplete: "organization" %>
+  </div>
+
+  <div class="col-12">
+    <label for="company_subdomain" class="form-label">Subdomain</label>
+    <div class="input-group">
+      <span class="input-group-text">https://</span>
+      <%= text_field_tag "company[subdomain]", wizard_subdomain, id: "company_subdomain", class: "form-control", placeholder: "acme", required: true, pattern: "[a-z0-9-]+", aria: { describedby: "subdomain_help" } %>
+      <span class="input-group-text">.</span>
+      <span class="input-group-text"><%= main_domain %></span>
+    </div>
+    <div id="subdomain_help" class="form-text">Use lowercase letters, numbers, and hyphens only.</div>
+  </div>
+
+  <% if suggestions.present? %>
+    <div class="col-12">
+      <div class="small text-muted mb-2 d-flex align-items-center justify-content-between">
+        <span>Suggestions:</span>
+        <span id="subdomain_suggestion_status" class="small"></span>
+      </div>
+      <div class="d-flex flex-wrap gap-2" data-suggestion-container>
+        <% suggestions.each do |candidate| %>
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-subdomain-suggestion="<%= candidate %>"><%= candidate %></button>
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <div class="col-12">
+      <div class="small text-muted mb-2 d-flex align-items-center justify-content-between">
+        <span>Suggestions:</span>
+        <span id="subdomain_suggestion_status" class="small"></span>
+      </div>
+      <div class="d-flex flex-wrap gap-2" data-suggestion-container></div>
+    </div>
+  <% end %>
+
+  <div class="col-12 d-flex justify-content-end">
+    <%= submit_tag "Continue", class: "btn btn-primary" %>
+  </div>
+<% end %>
+
+<script>
+  document.addEventListener("turbo:load", function () {
+    var nameInput = document.getElementById("company_name");
+    var subdomainInput = document.getElementById("company_subdomain");
+    var form = nameInput && nameInput.closest("form");
+    var status = document.getElementById("subdomain_suggestion_status");
+    if (!nameInput || !subdomainInput || !form) return;
+
+    function bindSuggestionButtons() {
+      document.querySelectorAll("[data-subdomain-suggestion]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          subdomainInput.value = button.dataset.subdomainSuggestion;
+        });
+      });
+    }
+
+    bindSuggestionButtons();
+
+    var debounceTimer;
+    nameInput.addEventListener("input", function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(function () {
+        var suggestUrl = form.dataset.suggestUrl;
+        var name = nameInput.value.trim();
+        if (!suggestUrl || name.length < 2) {
+          if (status) status.textContent = "";
+          return;
+        }
+
+        if (status) status.textContent = "Checking...";
+
+        fetch(suggestUrl + "?name=" + encodeURIComponent(name), {
+          headers: { "Accept": "application/json" }
+        })
+          .then(function (response) { return response.json(); })
+          .then(function (data) {
+            var container = document.querySelector("[data-suggestion-container]");
+            if (!container) return;
+
+            container.innerHTML = "";
+
+            var suggestions = data.suggestions || [];
+            suggestions.forEach(function (candidate) {
+              var btn = document.createElement("button");
+              btn.type = "button";
+              btn.className = "btn btn-outline-secondary btn-sm";
+              btn.dataset.subdomainSuggestion = candidate;
+              btn.textContent = candidate;
+              btn.addEventListener("click", function () {
+                subdomainInput.value = candidate;
+              });
+              container.appendChild(btn);
+            });
+
+            if (status) {
+              status.textContent = suggestions.length ? "Tap to select" : "No suggestions";
+            }
+          })
+          .catch(function () {
+            if (status) status.textContent = "Could not fetch suggestions";
+          });
+      }, 300);
+    });
+  });
+</script>

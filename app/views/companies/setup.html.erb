@@ -1,0 +1,76 @@
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h1 class="h4 mb-0">Company Setup</h1>
+            <span class="badge text-bg-light">Step <%= @step %> of 3</span>
+          </div>
+
+          <% step1_unlocked = @wizard_step1_complete || @step > 1 %>
+          <% step2_unlocked = @wizard_step2_complete || @step > 2 %>
+
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <% step_class = @step == 1 ? "btn-primary" : "btn-outline-secondary" %>
+            <%= link_to "1. Company", setup_companies_path(step: 1), class: "btn btn-sm #{step_class}" %>
+
+            <% if step1_unlocked %>
+              <% step_class = @step == 2 ? "btn-primary" : "btn-outline-secondary" %>
+              <%= link_to "2. Branding", setup_companies_path(step: 2), class: "btn btn-sm #{step_class}" %>
+            <% else %>
+              <button type="button" class="btn btn-sm btn-outline-secondary" disabled>2. Branding</button>
+            <% end %>
+
+            <% if step1_unlocked && step2_unlocked %>
+              <% step_class = @step == 3 ? "btn-primary" : "btn-outline-secondary" %>
+              <%= link_to "3. Review", setup_companies_path(step: 3), class: "btn btn-sm #{step_class}" %>
+            <% else %>
+              <button type="button" class="btn btn-sm btn-outline-secondary" disabled>3. Review</button>
+            <% end %>
+          </div>
+
+          <div class="progress mb-3" role="progressbar" aria-label="Setup progress" aria-valuenow="<%= (@step * 100) / 3 %>" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar" style="width: <%= (@step * 100) / 3 %>%;"></div>
+          </div>
+
+          <div class="small text-muted mb-4">
+            <% if @step == 1 %>
+              Step 1: Choose company name and subdomain
+            <% elsif @step == 2 %>
+              Step 2: Upload logo and choose brand color
+            <% else %>
+              Step 3: Review details and create company
+            <% end %>
+          </div>
+
+          <% if flash[:alert].present? %>
+            <div class="alert alert-danger"><%= flash[:alert] %></div>
+          <% end %>
+
+          <% if flash[:notice].present? %>
+            <div class="alert alert-success"><%= flash[:notice] %></div>
+          <% end %>
+
+          <% if @company&.errors&.any? %>
+            <div class="alert alert-danger">
+              <ul class="mb-0">
+                <% @company.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <% if @step == 1 %>
+            <%= render "companies/wizard/step1", wizard_name: @wizard_name, wizard_subdomain: @wizard_subdomain, suggestions: @suggestions %>
+          <% elsif @step == 2 %>
+            <%= render "companies/wizard/step2", wizard_primary_color: @wizard_primary_color, wizard_logo_signed_id: @wizard_logo_signed_id %>
+          <% else %>
+            <%= render "companies/wizard/step3", wizard_name: @wizard_name, wizard_subdomain: @wizard_subdomain, wizard_primary_color: @wizard_primary_color, wizard_logo_signed_id: @wizard_logo_signed_id %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

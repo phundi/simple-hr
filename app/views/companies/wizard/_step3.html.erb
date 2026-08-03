@@ -1,0 +1,28 @@
+<div class="row g-3">
+  <div class="col-12">
+    <div class="border rounded-3 p-3 bg-light">
+      <h2 class="h6 mb-3">Review</h2>
+      <div class="row g-2 small">
+        <div class="col-4 text-muted">Name</div>
+        <div class="col-8 fw-semibold"><%= wizard_name.presence || "-" %></div>
+
+        <div class="col-4 text-muted">Subdomain</div>
+        <div class="col-8 fw-semibold"><%= wizard_subdomain.presence || "-" %>.<%= main_domain %></div>
+
+        <div class="col-4 text-muted">Primary color</div>
+        <div class="col-8 fw-semibold d-flex align-items-center gap-2">
+          <span class="d-inline-block rounded" style="width: 20px; height: 20px; background: <%= wizard_primary_color %>;"></span>
+          <span><%= wizard_primary_color %></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 d-flex justify-content-between">
+    <%= link_to "Back", setup_companies_path(step: 2), class: "btn btn-outline-secondary" %>
+
+    <%= form_with url: companies_path(step: 3), method: :post do %>
+      <%= submit_tag "Create Company", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>

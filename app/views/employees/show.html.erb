@@ -17,6 +17,15 @@
       <p><strong>Name:</strong> <%= [@employee.first_name, @employee.last_name].join(" ") %></p>
       <p><strong>Code:</strong> <%= @employee.employee_code %></p>
       <p><strong>Department:</strong> <%= @employee.department.presence || "Unassigned" %></p>
+      <% if can_render?("view_employee_sensitive") %>
+        <p><strong>Salary:</strong> <%= money(@employee.salary, company: current_company) %></p>
+        <p><strong>NSSF:</strong> <%= "****" %></p>
+        <p><strong>PAYE:</strong> <%= "****" %></p>
+      <% else %>
+        <p><strong>Salary:</strong> ****</p>
+        <p><strong>NSSF:</strong> ****</p>
+        <p><strong>PAYE:</strong> ****</p>
+      <% end %>
       <p><strong>Status:</strong> <%= (@employee.employment_status || "unknown").humanize %> / <%= (@employee.onboarding_status || "unknown").humanize %></p>
       <p class="mb-0"><strong>Payment Method:</strong> <%= (@employee.payment_method || "not_set").humanize %></p>
     </div>

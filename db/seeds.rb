@@ -121,7 +121,8 @@ if first_user
     first_name: "Kenneth",
     last_name: "Kapundi",
     phone_number: "0991763413",
-    role: :super_admin,
+    role: :admin,
+    super_admin: true,
     company: default_company,
     password: "password",
     password_confirmation: "password"
@@ -191,10 +192,6 @@ ActiveRecord::Base.transaction do
     user.skip_confirmation! if user.respond_to?(:skip_confirmation!)
     # Devise length validation can reject short demo passwords (e.g. "hr"); we still set encrypted_password via Devise.
     user.save!(validate: false)
-  end
-
-  unless User.roles.key?("employee")
-    puts "Skipping employee demo user: User.role enum does not include :employee"
   end
 
   departments = [ "HR", "Finance", "IT" ]

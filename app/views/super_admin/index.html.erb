@@ -1,0 +1,66 @@
+<div class="container-xl py-4">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0">Platform Dashboard</h1>
+    <% if session[:super_admin_user_id].present? %>
+      <%= button_to "Stop Impersonating", super_admin_stop_impersonating_path, method: :post, class: "btn btn-outline-danger" %>
+    <% end %>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-2">
+      <div class="card card-sm"><div class="card-body"><div class="text-muted">Companies</div><div class="h2 mb-0"><%= @stats[:companies] %></div></div></div>
+    </div>
+    <div class="col-sm-6 col-lg-2">
+      <div class="card card-sm"><div class="card-body"><div class="text-muted">Users</div><div class="h2 mb-0"><%= @stats[:users] %></div></div></div>
+    </div>
+    <div class="col-sm-6 col-lg-2">
+      <div class="card card-sm"><div class="card-body"><div class="text-muted">Employees</div><div class="h2 mb-0"><%= @stats[:employees] %></div></div></div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card card-sm"><div class="card-body"><div class="text-muted">Pay Periods</div><div class="h2 mb-0"><%= @stats[:pay_periods] %></div></div></div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card card-sm"><div class="card-body"><div class="text-muted">Payslips</div><div class="h2 mb-0"><%= @stats[:payslips] %></div></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title mb-0">Company Stats</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Subdomain</th>
+            <th>Plan</th>
+            <th>Users</th>
+            <th>Employees</th>
+            <th>Pay Periods</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @companies.each do |company| %>
+            <tr>
+              <td><%= company.name %></td>
+              <td><code><%= company.subdomain %></code></td>
+              <td>
+                <% plan_name = company.plan.to_s.capitalize %>
+                <% plan_badge_class = company.pro? ? "bg-green-lt text-green" : "bg-secondary-lt text-secondary" %>
+                <span class="badge <%= plan_badge_class %>"><%= plan_name %></span>
+              </td>
+              <td><%= company.attributes["users_count"].to_i %></td>
+              <td><%= company.attributes["employees_count"].to_i %></td>
+              <td><%= company.attributes["pay_periods_count"].to_i %></td>
+              <td class="text-end">
+                <%= button_to "Impersonate", impersonate_super_admin_company_path(company), method: :post, class: "btn btn-sm btn-primary" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

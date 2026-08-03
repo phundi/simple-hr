@@ -1,9 +1,9 @@
 class Company < ApplicationRecord
   COMPANY_CONFIG_DEFAULTS = {
-    "payslip_footer_text" => { data_type: "text", value: "This is a computer generated payslip" },
-    "require_bank_verification" => { data_type: "boolean", value: "true" },
-    "default_payment_method" => { data_type: "string", value: "bank" },
-    "payslip_email_subject" => { data_type: "string", value: "Your Payslip for {{month}}" }
+    "payslip_footer_text" => "This is a computer generated payslip",
+    "require_bank_verification" => "true",
+    "default_payment_method" => "bank",
+    "payslip_email_subject" => "Your Payslip for {{month}}"
   }.freeze
 
   PROPERTY_DEFAULTS = {
@@ -43,10 +43,9 @@ class Company < ApplicationRecord
   end
 
   def seed_company_defaults
-    COMPANY_CONFIG_DEFAULTS.each do |key, details|
+    COMPANY_CONFIG_DEFAULTS.each do |key, default_value|
       company_configs.find_or_create_by!(key: key) do |cfg|
-        cfg.data_type = details[:data_type]
-        cfg.value = details[:value]
+        cfg.value = default_value
       end
     end
 

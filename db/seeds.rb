@@ -78,10 +78,9 @@ system_configs.each do |config_attrs|
 end
 
 Company.find_each do |company|
-  Company::COMPANY_CONFIG_DEFAULTS.each do |key, details|
+  Company::COMPANY_CONFIG_DEFAULTS.each do |key, default_value|
     cfg = company.company_configs.find_or_initialize_by(key: key)
-    cfg.data_type = details[:data_type]
-    cfg.value = details[:value] if cfg.value.blank?
+    cfg.value = default_value if cfg.value.blank?
     cfg.save! if cfg.changed?
   end
 

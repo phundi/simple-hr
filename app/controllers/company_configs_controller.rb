@@ -5,10 +5,10 @@ class CompanyConfigsController < ApplicationController
   before_action -> { authorize!("manage_company_profile") }
 
   COMPANY_CONFIG_DEFAULTS = {
-    "payslip_footer_text" => { data_type: "text", value: "This is a computer generated payslip" },
-    "require_bank_verification" => { data_type: "boolean", value: "true" },
-    "default_payment_method" => { data_type: "string", value: "bank" },
-    "payslip_email_subject" => { data_type: "string", value: "Your Payslip for {{month}}" }
+    "payslip_footer_text" => "This is a computer generated payslip",
+    "require_bank_verification" => "true",
+    "default_payment_method" => "bank",
+    "payslip_email_subject" => "Your Payslip for {{month}}"
   }.freeze
   ROLES = %w[admin hr accountant].freeze
   PERMISSIONS = %w[
@@ -90,9 +90,7 @@ class CompanyConfigsController < ApplicationController
   end
 
   def update
-    new_value = normalize_value(@company_config.data_type, config_update_params[:value])
-
-    if @company_config.update(value: new_value)
+    if @company_config.update(value: config_update_params[:value].to_s.strip)
       redirect_to company_configs_path(tab: "general"), notice: "Company config updated."
     else
       redirect_to company_configs_path(tab: "general"), alert: @company_config.errors.full_messages.to_sentence
@@ -142,20 +140,10 @@ class CompanyConfigsController < ApplicationController
     params.require(:company_property).permit(:property_key, :value)
   end
 
-  def normalize_value(data_type, raw_value)
-    case data_type
-    when "boolean"
-      ActiveModel::Type::Boolean.new.cast(raw_value) ? "true" : "false"
-    else
-      raw_value.to_s.strip
-    end
-  end
-
   def seed_company_defaults!
-    COMPANY_CONFIG_DEFAULTS.each do |key, details|
+    COMPANY_CONFIG_DEFAULTS.each do |key, default_value|
       cfg = current_company.company_configs.find_or_initialize_by(key: key)
-      cfg.data_type = details[:data_type]
-      cfg.value = details[:value] if cfg.new_record?
+      cfg.value = default_value if cfg.new_record?
       cfg.save! if cfg.changed?
     end
   end

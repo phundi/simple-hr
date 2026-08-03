@@ -106,7 +106,6 @@
 						<thead>
 							<tr>
 								<th>Key</th>
-								<th>Type</th>
 								<th>Value</th>
 							</tr>
 						</thead>
@@ -114,17 +113,9 @@
 							<% @company_configs.each do |config| %>
 								<tr>
 									<td class="fw-semibold"><%= config.key %></td>
-									<td><span class="badge text-bg-light"><%= config.data_type %></span></td>
 									<td>
 										<%= form_with model: config, url: company_config_path(config), method: :patch, class: "d-flex gap-2 align-items-center" do |f| %>
-											<% if config.data_type == "boolean" %>
-												<% checked = ActiveModel::Type::Boolean.new.cast(config.value) %>
-												<%= f.select :value, [["Yes", "true"], ["No", "false"]], { selected: checked ? "true" : "false" }, class: "form-select form-select-sm" %>
-											<% elsif config.data_type == "text" %>
-												<%= f.text_area :value, value: config.value, class: "form-control form-control-sm", rows: 2 %>
-											<% else %>
-												<%= f.text_field :value, value: config.value, class: "form-control form-control-sm" %>
-											<% end %>
+											<%= f.text_field :value, value: config.value, class: "form-control form-control-sm" %>
 											<%= f.submit "Save", class: "btn btn-sm btn-primary" %>
 										<% end %>
 									</td>

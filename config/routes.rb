@@ -43,6 +43,13 @@ Rails.application.routes.draw do
       patch :update_theme
       post :update_permissions
       post :create_property
+      post :update_theme
+      patch :update_payroll_settings
+      post :update_payroll_components
+      post :create_payroll_component
+      patch 'update_payroll_component/:id', to: 'company_configs#update_payroll_component', as: :update_payroll_component
+      post 'toggle_payroll_component/:id', to: 'company_configs#toggle_payroll_component', as: :toggle_payroll_component
+      delete :destroy_component
       delete :destroy_property
     end
   end
@@ -74,10 +81,53 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :payroll_imports, only: [:new, :create] do
+    collection do
+      get :mapping
+      get :preview
+      post :import
+      get :download_template
+    end
+  end
+
   resources :employees do
+    resource :payroll, only: [:show, :update], controller: 'employee_payrolls' do
+      member do
+        get :payslip_pdf
+        post :email_payslip
+      end
+    end
+
+    collection do
+      post :calculate_preview
+      post :bulk_action
+    end
     member do
       patch :block
       patch :unblock
+    end
+  end
+
+  resources :payslips, only: [] do
+    member do
+      get :pdf
+      post :email
+      patch :update
+    end
+  end
+
+  resources :pay_periods do
+    member do
+      post :publish
+      get :export_bank_schedule
+      get :export_paye
+      get :export_pension
+      get :export_tevet
+      get :export_funeral
+      get :export_medical
+      get :export_deductions
+      get :export_journal
+      post :export_reports
     end
   end
 
@@ -93,7 +143,7 @@ Rails.application.routes.draw do
 
   get "dashboard", to: redirect("/")
   get "/company_dashboard", to: "dashboard#index", as: :company_dashboard
-  get "payroll", to: "pages#payroll"
+  get "payroll", to: redirect("/pay_periods"), as: :payroll
   get "settings", to: "pages#settings"
 
   unauthenticated do

@@ -1,0 +1,141 @@
+<div class="modal fade" id="quickAddEmployeeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content" data-controller="payroll-calculator">
+      <div class="modal-header">
+        <h5 class="modal-title">Quick Add Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <%= form_with url: employees_path, method: :post, local: true, html: { class: "row g-3" } do |f| %>
+          <%= hidden_field_tag :quick_add, true %>
+          <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-3">
+              <div class="card-body">
+                <ul class="nav nav-tabs" role="tablist">
+                  <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#qa-step1">Basic</a></li>
+                  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#qa-step2">Payroll</a></li>
+                </ul>
+                <div class="tab-content py-3">
+                  <div class="tab-pane active" id="qa-step1">
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label">First Name *</label>
+                        <%= f.text_field :first_name, class: "form-control", required: true %>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Last Name *</label>
+                        <%= f.text_field :last_name, class: "form-control", required: true %>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Employee Code</label>
+                        <%= f.text_field :employee_code, class: "form-control", placeholder: "Auto-generate if blank" %>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Gender</label>
+                        <%= f.select :gender, [['Male','male'],['Female','female'],['Other','other']], include_blank: true, class: "form-select" %>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Phone</label>
+                        <%= f.text_field :phone, class: "form-control" %>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <%= f.email_field :email, class: "form-control" %>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Department</label>
+                        <div class="d-flex gap-2">
+                          <%= f.select :department, current_company.company_properties.where(property_key: 'department').pluck(:value), { include_blank: 'Select' }, class: "form-select" %>
+                          <%= link_to 'Add', '#', class: 'btn btn-outline-secondary', data: { bs_toggle: 'modal', bs_target: '#addDepartmentModal' } %>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Position / Job Title</label>
+                        <%= f.text_field :job_title, class: "form-control" %>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Project / Donor</label>
+                        <%= f.text_field :project, class: "form-control" %>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Basic Salary (MWK) *</label>
+                        <%= f.number_field :salary, class: 'form-control', step: 1, data: { action: 'input->payroll-calculator#update' }, required: true %>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Payment Method</label>
+                        <%= f.select :payment_method, Company::PROPERTY_DEFAULTS['payment_method'].map { |v| [v, v.downcase.gsub(' ', '_')] }, { selected: (current_company.company_configs.find_by(key: 'default_payment_method')&.value || current_company.try(:default_payment_method)) }, class: 'form-select' %>
+                      </div>
+                      <div id="bank-fields" class="col-12 d-none">
+                        <div class="row g-3">
+                          <div class="col-md-6"><label class="form-label">Bank Name</label><%= f.text_field :bank_name, class: 'form-control' %></div>
+                          <div class="col-md-6"><label class="form-label">Account Number</label><%= f.text_field :bank_account_number, class: 'form-control' %></div>
+                          <div class="col-md-4"><label class="form-label">Branch</label><%= f.text_field :bank_branch, class: 'form-control' %></div>
+                          <div class="col-md-4"><label class="form-label">Account Type</label><%= f.select :account_type, Employee.account_types.keys.map { |k| [k.titleize, k] }, {}, class: 'form-select' %></div>
+                          <div class="col-md-4"><label class="form-label">SWIFT</label><%= f.text_field :swift, class: 'form-control' %></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="tab-pane" id="qa-step2">
+                    <div class="row gy-3">
+                      <div class="col-12">
+                        <h6>Allowances</h6>
+                        <% current_company.payroll_components.where(category: 'allowance').each do |pc| %>
+                          <div class="form-check form-switch">
+                            <%= check_box_tag "components[][payroll_component_id]", pc.id, pc.enabled_by_default, class: 'form-check-input', id: "pc_#{pc.id}" %>
+                            <label class="form-check-label" for="pc_<%= pc.id %>"><%= pc.name %></label>
+                            <% if pc.calculation_type == 'percent_basic' %>
+                              <%= number_field_tag "components[][custom_rate]", pc.default_rate, step: 0.01, class: 'form-control d-inline-block ms-2', style: 'width:110px' %>
+                            <% else %>
+                              <%= number_field_tag "components[][custom_amount]", pc.default_amount, step: 0.01, class: 'form-control d-inline-block ms-2', style: 'width:150px' %>
+                            <% end %>
+                          </div>
+                        <% end %>
+                      </div>
+                      <div class="col-12">
+                        <h6>Deductions / Advances</h6>
+                        <div class="row g-2">
+                          <div class="col-md-6"><label class="form-label">Advance Amount</label><%= number_field_tag :advance_amount, nil, class: 'form-control' %></div>
+                          <div class="col-md-6"><label class="form-label">Monthly Installment</label><%= number_field_tag :advance_monthly_installment, nil, class: 'form-control' %></div>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <h6>Employer Benefits</h6>
+                        <% current_company.payroll_components.where(category: 'employer_benefit').each do |pc| %>
+                          <div class="form-check">
+                            <%= check_box_tag "components[][payroll_component_id]", pc.id, true, disabled: true, class: 'form-check-input' %>
+                            <label class="form-check-label"><%= pc.name %> <small class="text-muted">(default)</small></label>
+                          </div>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-3 sticky-top" style="top:1rem">
+              <div class="card-body">
+                <h6>Live Preview</h6>
+                <div data-payroll-calculator-target="preview">
+                  <p><strong>Basic:</strong> <span data-payroll-calculator-target="basic">-</span></p>
+                  <p><strong>House (10%):</strong> <span data-payroll-calculator-target="house">-</span></p>
+                  <p><strong>Gross:</strong> <span data-payroll-calculator-target="gross">-</span></p>
+                  <p><strong>PAYE:</strong> <span data-payroll-calculator-target="paye">-</span></p>
+                  <p><strong>Pension:</strong> <span data-payroll-calculator-target="pension">-</span></p>
+                  <hr>
+                  <h4 class="m-0"><span data-payroll-calculator-target="net">-</span></h4>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 mt-3 d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <%= f.submit "Create Employee", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

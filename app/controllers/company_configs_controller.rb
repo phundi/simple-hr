@@ -35,7 +35,7 @@ class CompanyConfigsController < ApplicationController
     seed_company_defaults!
     seed_property_buckets!
 
-    @active_tab = params[:tab].presence_in(%w[general lists permissions]) || "general"
+    @active_tab = params[:tab].presence_in(%w[general lists permissions payroll_settings]) || "general"
     @company_configs = current_company.company_configs.where(key: COMPANY_CONFIG_DEFAULTS.keys).order(:key)
     @company_properties = current_company.company_properties.where(property_key: CompanyProperty::PROPERTY_KEYS).order(:property_key, :position, :value)
     @property_groups = @company_properties.group_by(&:property_key)
@@ -46,7 +46,68 @@ class CompanyConfigsController < ApplicationController
         @permission_matrix[[record.permission_key, record.role]] = record.enabled
       end
     end
+
+    if @active_tab == "payroll_settings"
+      @payroll_settings = current_company.company_payroll_setting || current_company.build_company_payroll_setting
+      @payroll_components = current_company.payroll_components.order(:category, :position, :name)
+      @components_grouped = @payroll_components.group_by(&:category)
+    end
   end
+
+  def update_payroll_settings
+    attrs = params.require(:company_payroll_setting).permit(
+      :tax_year,
+      :tax_free_threshold,
+      :house_allowance_auto,
+      :house_allowance_rate,
+      :pension_employer_rate,
+      :pension_employee_rate,
+      :funeral_rate,
+      :tevet_rate,
+      :life_assurance_rate,
+      :pension_admin_rate,
+      :admin_vat_rate,
+      :paye_brackets,
+      :medical_grades
+    )
+
+    attrs[:paye_brackets] = JSON.parse(attrs[:paye_brackets]) if attrs[:paye_brackets].is_a?(String)
+    attrs[:medical_grades] = JSON.parse(attrs[:medical_grades]) if attrs[:medical_grades].is_a?(String)
+
+    setting = current_company.company_payroll_setting || current_company.build_company_payroll_setting
+    if setting.update(attrs)
+      redirect_to company_configs_path(tab: 'payroll_settings'), notice: 'Payroll settings saved.'
+    else
+      redirect_to company_configs_path(tab: 'payroll_settings'), alert: setting.errors.full_messages.to_sentence
+    end
+  end
+
+    def create_payroll_component
+      attrs = params.require(:payroll_component).permit(:name, :code, :category, :calculation_type, :default_rate, :default_amount, :taxable, :enabled_by_default, :position)
+      comp = current_company.payroll_components.new(attrs)
+      if comp.save
+        redirect_to company_configs_path(tab: 'payroll_settings'), notice: 'Component added.'
+      else
+        redirect_to company_configs_path(tab: 'payroll_settings'), alert: comp.errors.full_messages.to_sentence
+      end
+    end
+
+    def update_payroll_component
+      comp = current_company.payroll_components.find(params[:id])
+      attrs = params.require(:payroll_component).permit(:name, :code, :category, :calculation_type, :default_rate, :default_amount, :taxable, :enabled_by_default, :position)
+      if comp.update(attrs)
+        redirect_to company_configs_path(tab: 'payroll_settings'), notice: 'Component updated.'
+      else
+        redirect_to company_configs_path(tab: 'payroll_settings'), alert: comp.errors.full_messages.to_sentence
+      end
+    end
+
+    def toggle_payroll_component
+      comp = current_company.payroll_components.find(params[:id])
+      comp.enabled_by_default = !comp.enabled_by_default
+      comp.save!
+      redirect_to company_configs_path(tab: 'payroll_settings'), notice: 'Component toggled.'
+    end
 
   def update_permissions
     submitted = params.fetch(:permissions, {})
@@ -119,7 +180,7 @@ class CompanyConfigsController < ApplicationController
   private
 
   def ensure_company_admin!
-    return if current_user&.admin? || current_user&.hr?
+    return if current_user&.admin? || current_user&.super_admin?
 
     redirect_to authenticated_root_path, alert: "Access denied."
   end

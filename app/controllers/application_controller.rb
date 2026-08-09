@@ -10,6 +10,12 @@ class ApplicationController < ActionController::Base
   # Temporarily disabled to keep navigation on localhost during local testing.
   # before_action :redirect_to_subdomain_host, if: :redirect_to_company_host?
   helper_method :current_company, :main_domain, :company_main_domain, :authorize!
+  helper_method :can_render?
+
+  def can_render?(perm)
+    return true if current_user&.super_admin?
+    current_user&.can?(perm)
+  end
 
   def after_sign_in_path_for(resource)
     user = resource.is_a?(User) ? resource : current_user

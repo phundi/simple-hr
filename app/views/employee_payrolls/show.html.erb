@@ -1,0 +1,254 @@
+<div class="container-xl py-4">
+  <div class="card shadow-sm border-0 rounded-3 mb-4">
+    <div class="card-body d-flex flex-wrap gap-4 align-items-center">
+      <div class="d-flex gap-3 align-items-center">
+        <div class="avatar avatar-xl rounded-circle bg-primary-lt text-primary d-inline-flex align-items-center justify-content-center">
+          <% if @employee.respond_to?(:avatar) && @employee.avatar.attached? %>
+            <%= image_tag url_for(@employee.avatar), class: 'rounded-circle', width: 64, height: 64 %>
+          <% else %>
+            <span class="fs-4"><%= @employee.full_name.to_s.split.map(&:first).join.upcase %></span>
+          <% end %>
+        </div>
+        <div>
+          <h3 class="mb-1"><%= @employee.full_name %> <small class="text-muted">(<%= @employee.employee_code %>)</small></h3>
+          <div class="text-muted small mb-2">
+            <%= @employee.department.presence || 'No Department' %> • <%= @employee.job_title.presence || 'No title' %>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <span class="badge bg-success">Net <%= money(@computation[:net_pay], company: current_company) %></span>
+            <span class="badge bg-info">Gross <%= money(@computation[:gross_income], company: current_company) %></span>
+            <span class="badge bg-warning">PAYE <%= money(@computation[:deductions_breakdown][:paye], company: current_company) %></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ms-auto text-end">
+        <%= link_to 'Back to Employees', employees_path, class: 'btn btn-outline-secondary btn-sm mb-2' %>
+        <div class="input-group input-group-sm">
+          <label class="input-group-text">Pay Period</label>
+          <%= form_with url: employee_payroll_path(@employee), method: :get, local: true, class: 'd-flex' do %>
+            <%= select_tag :pay_period_id, options_from_collection_for_select(current_company.pay_periods.order(year: :desc, month: :desc), :id, ->(pp) { "#{Date::MONTHNAMES[pp.month]} #{pp.year}" }, @pay_period&.id), include_blank: 'Current', class: 'form-select form-select-sm', onchange: 'this.form.submit()' %>
+            <%= hidden_field_tag :tab, @current_tab %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0 rounded-3 mb-3">
+    <div class="card-body p-0">
+      <ul class="nav nav-tabs">
+        <li class="nav-item"><%= link_to raw('<i class="ti ti-user"></i> General'), employee_payroll_path(@employee, pay_period_id: @pay_period&.id, tab: 'general'), class: "nav-link #{'active' if @current_tab == 'general'}" %></li>
+        <li class="nav-item"><%= link_to raw('<i class="ti ti-gift"></i> Allowances & Benefits'), employee_payroll_path(@employee, pay_period_id: @pay_period&.id, tab: 'allowances'), class: "nav-link #{'active' if @current_tab == 'allowances'}" %></li>
+        <li class="nav-item"><%= link_to raw('<i class="ti ti-receipt-tax"></i> Deductions'), employee_payroll_path(@employee, pay_period_id: @pay_period&.id, tab: 'deductions'), class: "nav-link #{'active' if @current_tab == 'deductions'}" %></li>
+        <li class="nav-item"><%= link_to raw('<i class="ti ti-pig-money"></i> Pension & Benefits'), employee_payroll_path(@employee, pay_period_id: @pay_period&.id, tab: 'benefits'), class: "nav-link #{'active' if @current_tab == 'benefits'}" %></li>
+        <li class="nav-item"><%= link_to raw('<i class="ti ti-file-text"></i> Payslip Preview'), employee_payroll_path(@employee, pay_period_id: @pay_period&.id, tab: 'payslip'), class: "nav-link #{'active' if @current_tab == 'payslip'}" %></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="row gy-3">
+    <div class="col-xl-8">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body">
+          <% if @current_tab == 'general' %>
+            <div class="row gy-3">
+              <div class="col-md-5">
+                <div class="card shadow-sm border-0 rounded-3 p-3 h-100">
+                  <h5 class="card-title">Employee Information</h5>
+                  <p class="mb-1"><strong>Name:</strong> <%= @employee.full_name %></p>
+                  <p class="mb-1"><strong>Code:</strong> <%= @employee.employee_code %></p>
+                  <p class="mb-1"><strong>Department:</strong> <%= @employee.department.presence || 'Unassigned' %></p>
+                  <p class="mb-1"><strong>Position:</strong> <%= @employee.job_title.presence || 'N/A' %></p>
+                  <p class="mb-1"><strong>Status:</strong> <%= @employee.employment_status %></p>
+                  <p class="mb-1"><strong>Payment:</strong> <%= @employee.payment_method.humanize %></p>
+                  <% if @employee.bank_name.present? || @employee.bank_account_number.present? %>
+                    <p class="mb-1"><strong>Bank:</strong> <%= @employee.bank_name %></p>
+                    <p class="mb-1"><strong>Account:</strong> <%= @employee.bank_account_number %></p>
+                  <% end %>
+                </div>
+              </div>
+              <div class="col-md-7">
+                <div class="card shadow-sm border-0 rounded-3 p-3 h-100">
+                  <h5 class="card-title">Payroll Inputs</h5>
+                  <%= form_with url: employee_payroll_path(@employee, pay_period_id: @pay_period&.id), method: :patch, local: true do |f| %>
+                    <%= hidden_field_tag :tab, 'general' %>
+                    <div class="mb-3">
+                      <label class="form-label">Basic Salary</label>
+                      <%= number_field_tag 'payslip[basic_salary]', @computation[:basic_salary], class: 'form-control', step: 0.01 %>
+                    </div>
+                    <div class="row gx-2">
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">House Allowance (10%)</label>
+                        <%= number_field_tag 'payslip[allowances][house_allowance]', @computation[:allowances][:house_allowance], class: 'form-control', step: 0.01 %>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">Other Allowances</label>
+                        <%= number_field_tag 'payslip[allowances][other_allowances]', @computation[:allowances].except(:house_allowance).values.sum, class: 'form-control', step: 0.01 %>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Advance</label>
+                      <%= number_field_tag 'payslip[deductions_breakdown][advances]', @computation[:deductions_breakdown][:advances], class: 'form-control', step: 0.01 %>
+                    </div>
+                    <div class="text-end">
+                      <%= f.submit 'Save General', class: 'btn btn-primary' %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% elsif @current_tab == 'allowances' %>
+            <h5 class="mb-3">Allowances & Benefits</h5>
+            <div class="row gy-3">
+              <div class="col-md-6">
+                <div class="table-responsive">
+                  <table class="table table-vcenter">
+                    <thead class="text-muted small"><tr><th>Description</th><th class="text-end">Amount</th></tr></thead>
+                    <tbody>
+                      <tr><td>Basic Salary</td><td class="text-end"><%= money(@computation[:basic_salary], company: current_company) %></td></tr>
+                      <tr><td>House Allowance</td><td class="text-end"><%= money(@computation[:allowances][:house_allowance], company: current_company) %></td></tr>
+                      <tr><td>Other Allowances</td><td class="text-end"><%= money(@computation[:allowances].except(:house_allowance).values.sum, company: current_company) %></td></tr>
+                      <tr><th>Gross Income</th><th class="text-end"><%= money(@computation[:gross_income], company: current_company) %></th></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="table-responsive">
+                  <table class="table table-vcenter">
+                    <thead class="text-muted small"><tr><th>Employer Benefit</th><th class="text-end">Amount</th></tr></thead>
+                    <tbody>
+                      <% @computation[:employer_benefits].each do |key, amount| %>
+                        <tr><td><%= key.to_s.humanize %></td><td class="text-end"><%= money(amount, company: current_company) %></td></tr>
+                      <% end %>
+                      <tr><th>Total Benefits</th><th class="text-end"><%= money(@computation[:total_employer_benefits], company: current_company) %></th></tr>
+                      <tr><th>Total Remuneration</th><th class="text-end"><%= money(@computation[:total_remuneration], company: current_company) %></th></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          <% elsif @current_tab == 'deductions' %>
+            <h5 class="mb-3">Deductions & Advances</h5>
+            <div class="table-responsive">
+              <table class="table table-vcenter">
+                <thead class="text-muted small"><tr><th>Deduction</th><th class="text-end">Amount</th></tr></thead>
+                <tbody>
+                  <tr><td>PAYE</td><td class="text-end"><%= money(@computation[:deductions_breakdown][:paye], company: current_company) %></td></tr>
+                  <tr><td>Pension Employee</td><td class="text-end"><%= money(@computation[:deductions_breakdown][:pension_employee], company: current_company) %></td></tr>
+                  <tr><td>Advance</td><td class="text-end"><%= money(@computation[:deductions_breakdown][:advances], company: current_company) %></td></tr>
+                  <tr><th>Total Deductions</th><th class="text-end"><%= money(@computation[:total_deductions], company: current_company) %></th></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="alert alert-info">PAYE is calculated using the configured brackets.</div>
+            <div class="table-responsive mt-3">
+              <table class="table table-vcenter">
+                <thead class="text-muted small"><tr><th>Bracket Limit</th><th class="text-end">Rate</th></tr></thead>
+                <tbody>
+                  <% @paye_brackets.each do |bracket| %>
+                    <tr>
+                      <td><%= bracket[:limit].finite? ? number_with_delimiter(bracket[:limit].to_i) : 'Above' %></td>
+                      <td class="text-end"><%= number_to_percentage(bracket[:rate] * 100, precision: 0) %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% elsif @current_tab == 'benefits' %>
+            <h5 class="mb-3">Employer Benefits</h5>
+            <div class="table-responsive">
+              <table class="table table-vcenter">
+                <thead class="text-muted small"><tr><th>Benefit</th><th class="text-end">Amount</th></tr></thead>
+                <tbody>
+                  <tr><td>Pension Employer</td><td class="text-end"><%= money(@computation[:employer_benefits][:pension_employer], company: current_company) %></td></tr>
+                  <tr><td>Pension Employee</td><td class="text-end"><%= money(@computation[:deductions_breakdown][:pension_employee], company: current_company) %></td></tr>
+                  <tr><td>Funeral Cover</td><td class="text-end"><%= money(@computation[:employer_benefits][:funeral], company: current_company) %></td></tr>
+                  <tr><td>Tevet Levy</td><td class="text-end"><%= money(@computation[:employer_benefits][:tevet], company: current_company) %></td></tr>
+                  <tr><td>Life Assurance</td><td class="text-end"><%= money(@computation[:employer_benefits][:life_assurance], company: current_company) %></td></tr>
+                  <tr><td>Pension Admin</td><td class="text-end"><%= money(@computation[:employer_benefits][:pension_admin], company: current_company) %></td></tr>
+                  <tr><td>VAT on Admin</td><td class="text-end"><%= money(@computation[:employer_benefits][:pension_admin_vat], company: current_company) %></td></tr>
+                  <tr><th>Total Employer Cost</th><th class="text-end"><%= money(@computation[:total_employer_benefits], company: current_company) %></th></tr>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <h5 class="mb-3">Payslip Preview</h5>
+            <% if @payslip %>
+              <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                      <h6 class="mb-1"><%= @employee.full_name %></h6>
+                      <p class="text-muted mb-0"><%= @employee.employee_code %> • <%= @employee.department.presence || 'Unassigned' %></p>
+                    </div>
+                    <div class="text-end">
+                      <p class="text-muted mb-1">Pay Period</p>
+                      <strong><%= Date::MONTHNAMES[@pay_period.month] %> <%= @pay_period.year %></strong>
+                    </div>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-vcenter mb-0">
+                      <tbody>
+                        <tr><td>Basic Salary</td><td class="text-end"><%= money(@payslip.basic_salary, company: current_company) %></td></tr>
+                        <tr><td>Gross Income</td><td class="text-end"><%= money(@payslip.gross, company: current_company) %></td></tr>
+                        <tr><td>PAYE</td><td class="text-end"><%= money(@payslip.paye, company: current_company) %></td></tr>
+                        <tr><td>Pension Employee</td><td class="text-end"><%= money(@payslip.pension_employee, company: current_company) %></td></tr>
+                        <tr><td>Advance</td><td class="text-end"><%= money((@payslip.deductions_breakdown || {})['advances'] || 0, company: current_company) %></td></tr>
+                        <tr><th>Total Deductions</th><th class="text-end"><%= money(@payslip.deductions || 0, company: current_company) %></th></tr>
+                        <tr><th>Net Pay</th><th class="text-end text-success"><%= money(@payslip.net, company: current_company) %></th></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="mt-3 d-flex gap-2 flex-wrap">
+                    <%= link_to 'Download PDF', pdf_payslip_path(@payslip), class: 'btn btn-primary', target: '_blank' %>
+                    <%= button_to 'Email Payslip', email_payslip_path(@payslip), method: :post, class: 'btn btn-outline-secondary' %>
+                    <%= link_to 'Print', pdf_payslip_path(@payslip), class: 'btn btn-outline-secondary', target: '_blank' %>
+                  </div>
+                </div>
+              </div>
+            <% else %>
+              <div class="card shadow-sm border-0 rounded-3 p-4 text-center">
+                <h5>No payslip for this period</h5>
+                <p class="text-muted">Run payroll for <%= Date::MONTHNAMES[@pay_period&.month || Date.current.month] %> <%= @pay_period&.year || Date.current.year %> to generate a payslip.</p>
+                <%= link_to 'Create Payslip', new_import_template_path, class: 'btn btn-primary' %>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="card shadow-sm border-0 rounded-3 mb-3">
+        <div class="card-body">
+          <h6 class="mb-3">Payroll Summary</h6>
+          <div class="mb-2 d-flex justify-content-between"><span>Basic Salary</span><strong><%= money(@computation[:basic_salary], company: current_company) %></strong></div>
+          <div class="mb-2 d-flex justify-content-between"><span>Gross Income</span><strong><%= money(@computation[:gross_income], company: current_company) %></strong></div>
+          <div class="mb-2 d-flex justify-content-between"><span>PAYE</span><strong><%= money(@computation[:deductions_breakdown][:paye], company: current_company) %></strong></div>
+          <div class="mb-2 d-flex justify-content-between"><span>Pension</span><strong><%= money(@computation[:deductions_breakdown][:pension_employee], company: current_company) %></strong></div>
+          <hr>
+          <div class="d-flex justify-content-between"><span>Net Pay</span><strong class="text-success"><%= money(@computation[:net_pay], company: current_company) %></strong></div>
+          <div class="mt-4 small text-muted">
+            <div>Pay Period:</div>
+            <strong><%= @pay_period ? "#{Date::MONTHNAMES[@pay_period.month]} #{@pay_period.year}" : "#{Date::MONTHNAMES[Date.current.month]} #{Date.current.year}" %></strong>
+          </div>
+        </div>
+      </div>
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body">
+          <h6 class="mb-3">Malawi Payroll Rates</h6>
+          <p class="text-muted small mb-2">Tax Year: <strong><%= @tax_year %></strong></p>
+          <div class="mb-2 d-flex justify-content-between"><span>House Allowance</span><strong>10%</strong></div>
+          <div class="mb-2 d-flex justify-content-between"><span>Pension Employee</span><strong>5%</strong></div>
+          <div class="mb-2 d-flex justify-content-between"><span>Pension Employer</span><strong>10%</strong></div>
+          <div class="mb-2 d-flex justify-content-between"><span>Funeral Cover</span><strong>1%</strong></div>
+          <div class="mb-2 d-flex justify-content-between"><span>Tevet Levy</span><strong>1%</strong></div>
+          <div class="mb-2 d-flex justify-content-between"><span>Pension Admin</span><strong>0.3%</strong></div>
+          <div class="d-flex justify-content-between"><span>Admin VAT</span><strong>16.5%</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

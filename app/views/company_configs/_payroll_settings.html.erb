@@ -1,0 +1,179 @@
+<div class="row g-3">
+  <div class="col-12">
+    <div class="card shadow-sm border-0 rounded-3">
+      <div class="card-body">
+        <h5 class="card-title">Company Payroll Settings</h5>
+        <%= form_with model: @payroll_settings, url: update_payroll_settings_company_configs_path, method: :patch, local: true do |f| %>
+          <div class="row g-3">
+            <div class="col-md-3">
+              <%= f.label :tax_year, 'Tax Year' %>
+              <%= f.text_field :tax_year, value: @payroll_settings&.tax_year || Date.current.year.to_s, class: 'form-control' %>
+            </div>
+            <div class="col-md-3">
+              <%= f.label :tax_free_threshold, 'Tax Free Threshold (MWK)' %>
+              <%= f.number_field :tax_free_threshold, value: @payroll_settings&.tax_free_threshold || 100_000, step: 0.01, class: 'form-control' %>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check mt-4 pt-2">
+                <%= f.check_box :house_allowance_auto, checked: @payroll_settings&.house_allowance_auto != false, class: 'form-check-input', id: 'company_payroll_setting_house_allowance_auto' %>
+                <%= f.label :house_allowance_auto, 'Auto House Allowance', class: 'form-check-label' %>
+              </div>
+            </div>
+            <div class="col-md-3"></div>
+
+            <div class="col-md-3">
+              <%= f.label :house_allowance_rate, 'House Allowance %' %>
+              <%= f.number_field :house_allowance_rate, value: @payroll_settings&.house_allowance_rate || 0.10, step: 0.001, class: 'form-control' %>
+            </div>
+            <div class="col-md-3">
+              <%= f.label :pension_employer_rate, 'Pension Employer %' %>
+              <%= f.number_field :pension_employer_rate, value: @payroll_settings&.pension_employer_rate || 0.10, step: 0.001, class: 'form-control' %>
+            </div>
+            <div class="col-md-3">
+              <%= f.label :pension_employee_rate, 'Pension Employee %' %>
+              <%= f.number_field :pension_employee_rate, value: @payroll_settings&.pension_employee_rate || 0.05, step: 0.001, class: 'form-control' %>
+            </div>
+            <div class="col-md-3">
+              <%= f.label :funeral_rate, 'Funeral %' %>
+              <%= f.number_field :funeral_rate, value: @payroll_settings&.funeral_rate || 0.01, step: 0.001, class: 'form-control' %>
+            </div>
+            <div class="col-md-3">
+              <%= f.label :tevet_rate, 'Tevet %' %>
+              <%= f.number_field :tevet_rate, value: @payroll_settings&.tevet_rate || 0.01, step: 0.001, class: 'form-control' %>
+            </div>
+            <div class="col-md-3">
+              <%= f.label :life_assurance_rate, 'Life Assurance %' %>
+              <%= f.number_field :life_assurance_rate, value: @payroll_settings&.life_assurance_rate || 0.01, step: 0.001, class: 'form-control' %>
+            </div>
+            <div class="col-md-3">
+              <%= f.label :pension_admin_rate, 'Pension Admin %' %>
+              <%= f.number_field :pension_admin_rate, value: @payroll_settings&.pension_admin_rate || 0.003, step: 0.0001, class: 'form-control' %>
+            </div>
+            <div class="col-md-3">
+              <%= f.label :admin_vat_rate, 'Admin VAT %' %>
+              <%= f.number_field :admin_vat_rate, value: @payroll_settings&.admin_vat_rate || 0.165, step: 0.001, class: 'form-control' %>
+            </div>
+
+            <% paye_brackets_value = if @payroll_settings&.paye_brackets.is_a?(String)
+              JSON.parse(@payroll_settings.paye_brackets) rescue CompanyPayrollSetting::DEFAULT_BRACKETS
+            else
+              @payroll_settings&.paye_brackets.presence || CompanyPayrollSetting::DEFAULT_BRACKETS
+            end %>
+            <div class="col-12">
+              <%= f.label :paye_brackets, 'PAYE Brackets (JSON)' %>
+              <%= f.text_area :paye_brackets, value: JSON.pretty_generate(paye_brackets_value), rows: 6, class: 'form-control font-monospace' %>
+              <div class="form-text">Enter brackets as JSON array of objects with min, max and rate. Example: [{"min":0,"max":100000,"rate":0},{"min":100001,"max":120000,"rate":15}]</div>
+            </div>
+            <% medical_grades_value = if @payroll_settings&.medical_grades.is_a?(String)
+              JSON.parse(@payroll_settings.medical_grades) rescue {}
+            else
+              @payroll_settings&.medical_grades.presence || {}
+            end %>
+            <div class="col-12">
+              <%= f.label :medical_grades, 'Medical Grades (JSON)' %>
+              <%= f.text_area :medical_grades, value: JSON.pretty_generate(medical_grades_value), rows: 4, class: 'form-control font-monospace' %>
+              <div class="form-text">Use JSON object like {"Grade A":100000,"Grade B":75000,"Grade C":50000}</div>
+            </div>
+          </div>
+          <div class="mt-3">
+            <%= f.submit 'Save Payroll Settings', class: 'btn btn-primary' %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="card shadow-sm border-0 rounded-3">
+      <div class="card-body">
+        <h5 class="card-title">Payroll Components</h5>
+        <div class="table-responsive">
+          <table class="table table-vcenter card-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Code</th>
+                <th>Type</th>
+                <th>Default Rate/Amount</th>
+                <th>Taxable</th>
+                <th>Enabled</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @payroll_components.each do |pc| %>
+                <tr>
+                  <td><%= pc.name %></td>
+                  <td><%= pc.code %></td>
+                  <td><%= pc.calculation_type %></td>
+                  <td><%= pc.default_rate || pc.default_amount %></td>
+                  <td><%= pc.taxable ? 'Yes' : 'No' %></td>
+                  <td><%= pc.enabled_by_default ? 'Yes' : 'No' %></td>
+                  <td>
+                    <%= link_to 'Edit', '#', class: 'btn btn-sm btn-outline-secondary' %>
+                    <%= button_to 'Toggle', toggle_payroll_component_company_configs_path(pc), method: :post, class: 'btn btn-sm btn-outline-secondary' %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-3">
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addComponentModal">Add Custom Component</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Component Modal -->
+<div class="modal fade" id="addComponentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Payroll Component</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <%= form_with model: PayrollComponent.new, url: create_payroll_component_company_configs_path, method: :post, local: true do |f| %>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <%= f.label :name %>
+              <%= f.text_field :name, class: 'form-control' %>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :code %>
+              <%= f.text_field :code, class: 'form-control' %>
+            </div>
+            <div class="col-md-4">
+              <%= f.label :category %>
+              <%= f.select :category, PayrollComponent::CATEGORIES.map { |c| [c.humanize, c] }, {}, class: 'form-select' %>
+            </div>
+            <div class="col-md-4">
+              <%= f.label :calculation_type %>
+              <%= f.select :calculation_type, PayrollComponent::CALCULATION_TYPES.map { |c| [c.humanize, c] }, {}, class: 'form-select' %>
+            </div>
+            <div class="col-md-4">
+              <%= f.label :default_rate %>
+              <%= f.number_field :default_rate, step: 0.0001, class: 'form-control' %>
+            </div>
+            <div class="col-md-4">
+              <%= f.label :default_amount %>
+              <%= f.number_field :default_amount, step: 0.01, class: 'form-control' %>
+            </div>
+            <div class="col-md-4 d-flex align-items-center">
+              <div class="form-check mt-4">
+                <%= f.check_box :taxable, class: 'form-check-input' %>
+                <%= f.label :taxable, class: 'form-check-label' %>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 text-end">
+            <%= f.submit 'Add Component', class: 'btn btn-primary' %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

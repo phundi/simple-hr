@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_03_131500) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_09_091500) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -66,6 +66,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_131500) do
     t.index ["company_id"], name: "index_company_configs_on_company_id"
   end
 
+  create_table "company_payroll_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.decimal "admin_vat_rate", precision: 10, scale: 4, default: "0.165", null: false
+    t.bigint "company_id", null: false
+    t.datetime "created_at", null: false
+    t.decimal "funeral_rate", precision: 10, scale: 4, default: "0.01", null: false
+    t.boolean "house_allowance_auto", default: true, null: false
+    t.decimal "house_allowance_rate", precision: 10, scale: 4, default: "0.1", null: false
+    t.decimal "life_assurance_rate", precision: 10, scale: 4, default: "0.01", null: false
+    t.json "medical_grades"
+    t.json "paye_brackets"
+    t.decimal "pension_admin_rate", precision: 10, scale: 4, default: "0.003", null: false
+    t.decimal "pension_employee_rate", precision: 10, scale: 4, default: "0.05", null: false
+    t.decimal "pension_employer_rate", precision: 10, scale: 4, default: "0.1", null: false
+    t.decimal "tax_free_threshold", precision: 15, scale: 2, default: "100000.0", null: false
+    t.string "tax_year"
+    t.decimal "tevet_rate", precision: 10, scale: 4, default: "0.01", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_company_payroll_settings_on_company_id"
+  end
+
   create_table "company_properties", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "company_id", null: false
     t.datetime "created_at", null: false
@@ -75,6 +95,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_131500) do
     t.string "value", null: false
     t.index ["company_id", "property_key", "value"], name: "index_company_properties_on_company_and_key_and_value", unique: true
     t.index ["company_id"], name: "index_company_properties_on_company_id"
+  end
+
+  create_table "employee_advances", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "advance_type", default: "salary_advance", null: false
+    t.decimal "amount", precision: 15, scale: 2, null: false
+    t.decimal "balance", precision: 15, scale: 2, null: false
+    t.bigint "company_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "employee_id", null: false
+    t.date "issue_date"
+    t.decimal "monthly_installment", precision: 15, scale: 2
+    t.text "notes"
+    t.string "status", default: "active", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_employee_advances_on_company_id"
+    t.index ["employee_id"], name: "index_employee_advances_on_employee_id"
+  end
+
+  create_table "employee_payroll_components", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.decimal "custom_amount", precision: 15, scale: 2
+    t.decimal "custom_rate", precision: 10, scale: 4
+    t.date "effective_from"
+    t.bigint "employee_id", null: false
+    t.boolean "enabled", default: true, null: false
+    t.bigint "payroll_component_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["employee_id"], name: "index_employee_payroll_components_on_employee_id"
+    t.index ["payroll_component_id"], name: "index_employee_payroll_components_on_payroll_component_id"
   end
 
   create_table "employees", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -136,14 +185,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_131500) do
     t.index ["company_id"], name: "index_pay_periods_on_company_id"
   end
 
+  create_table "payroll_components", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.boolean "affects_paye", default: true, null: false
+    t.string "calculation_type", null: false
+    t.string "category", null: false
+    t.string "code", null: false
+    t.bigint "company_id", null: false
+    t.datetime "created_at", null: false
+    t.decimal "default_amount", precision: 15, scale: 2
+    t.decimal "default_rate", precision: 10, scale: 4, default: "0.0", null: false
+    t.boolean "enabled_by_default", default: true, null: false
+    t.json "metadata"
+    t.string "name", null: false
+    t.integer "position"
+    t.boolean "taxable", default: true, null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "code"], name: "index_payroll_components_on_company_and_code", unique: true
+    t.index ["company_id"], name: "index_payroll_components_on_company_id"
+  end
+
   create_table "payslips", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.json "allowances"
+    t.decimal "basic_salary", precision: 15, scale: 2
     t.datetime "created_at", null: false
     t.decimal "deductions", precision: 15, scale: 2
+    t.json "deductions_breakdown"
     t.bigint "employee_id", null: false
+    t.json "employer_benefits"
     t.decimal "gross", precision: 15, scale: 2
     t.decimal "net", precision: 15, scale: 2
     t.bigint "pay_period_id", null: false
+    t.decimal "paye", precision: 15, scale: 2
     t.string "pdf_url"
+    t.decimal "pension_employee", precision: 15, scale: 2
+    t.decimal "taxable_income", precision: 15, scale: 2
+    t.decimal "total_employer_benefits", precision: 15, scale: 2
+    t.decimal "total_remuneration", precision: 15, scale: 2
     t.datetime "updated_at", null: false
     t.index ["employee_id"], name: "index_payslips_on_employee_id"
     t.index ["pay_period_id", "employee_id"], name: "index_payslips_on_pay_period_id_and_employee_id", unique: true
@@ -213,13 +290,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_131500) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "company_configs", "companies"
+  add_foreign_key "company_payroll_settings", "companies"
   add_foreign_key "company_properties", "companies"
+  add_foreign_key "employee_advances", "companies"
+  add_foreign_key "employee_advances", "employees"
+  add_foreign_key "employee_payroll_components", "employees"
+  add_foreign_key "employee_payroll_components", "payroll_components"
   add_foreign_key "employees", "companies"
   add_foreign_key "employees", "import_templates"
   add_foreign_key "employees", "users"
   add_foreign_key "import_templates", "companies"
   add_foreign_key "import_templates", "users", column: "created_by"
   add_foreign_key "pay_periods", "companies"
+  add_foreign_key "payroll_components", "companies"
   add_foreign_key "payslips", "employees"
   add_foreign_key "payslips", "pay_periods"
   add_foreign_key "role_permissions", "companies"

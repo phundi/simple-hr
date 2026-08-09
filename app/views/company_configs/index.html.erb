@@ -16,6 +16,9 @@
 				<%= link_to "Permissions", company_configs_path(tab: "permissions"), class: "nav-link #{@active_tab == "permissions" ? "active" : ""}" %>
 			</li>
 		<% end %>
+		<li class="nav-item">
+			<%= link_to "Payroll Settings", company_configs_path(tab: "payroll_settings"), class: "nav-link #{@active_tab == "payroll_settings" ? "active" : ""}" %>
+		</li>
 	</ul>
 
 	<% if @active_tab == "general" %>
@@ -146,60 +149,62 @@
 			</div>
 		</div>
 
-		<div class="row g-3">
-			<% CompanyProperty::PROPERTY_KEYS.each do |key| %>
-				<div class="col-12 col-lg-4">
-					<div class="card shadow-sm border-0 rounded-3 h-100">
-						<div class="card-body">
-							<h3 class="h6"><%= key.humanize %></h3>
-							<div class="d-flex flex-wrap gap-2 mt-3">
-								<% (@property_groups[key] || []).each do |prop| %>
-									<span class="badge rounded-pill text-bg-light d-inline-flex align-items-center gap-2 px-3 py-2">
-										<span><%= prop.value %></span>
-										<%= button_to "x", destroy_property_company_configs_path(id: prop.id), method: :delete, form: { class: "d-inline" }, class: "btn btn-sm btn-link text-danger text-decoration-none p-0", data: { turbo_confirm: "Remove this item?" } %>
-									</span>
-								<% end %>
+			<div class="row g-3">
+				<% CompanyProperty::PROPERTY_KEYS.each do |key| %>
+					<div class="col-12 col-lg-4">
+						<div class="card shadow-sm border-0 rounded-3 h-100">
+							<div class="card-body">
+								<h3 class="h6"><%= key.humanize %></h3>
+								<div class="d-flex flex-wrap gap-2 mt-3">
+									<% (@property_groups[key] || []).each do |prop| %>
+										<span class="badge rounded-pill text-bg-light d-inline-flex align-items-center gap-2 px-3 py-2">
+											<span><%= prop.value %></span>
+											<%= button_to "x", destroy_property_company_configs_path(id: prop.id), method: :delete, form: { class: "d-inline" }, class: "btn btn-sm btn-link text-danger text-decoration-none p-0", data: { turbo_confirm: "Remove this item?" } %>
+										</span>
+									<% end %>
+								</div>
 							</div>
 						</div>
 					</div>
-				</div>
-			<% end %>
-		</div>
-	<% else %>
-		<div class="card shadow-sm border-0 rounded-3">
-			<div class="card-body">
-				<%= form_with url: update_permissions_company_configs_path, method: :post, local: true do %>
-					<div class="table-responsive">
-						<table class="table table-bordered align-middle mb-3">
-							<thead class="table-light">
-								<tr>
-									<th style="min-width: 260px;">Permission</th>
-									<% CompanyConfigsController::ROLES.each do |role| %>
-										<th class="text-center text-capitalize"><%= role %></th>
-									<% end %>
-								</tr>
-							</thead>
-							<tbody>
-								<% CompanyConfigsController::PERMISSIONS.each do |permission_key| %>
-									<tr>
-										<td class="fw-semibold"><%= permission_key.humanize %></td>
-										<% CompanyConfigsController::ROLES.each do |role| %>
-											<% checked = @permission_matrix[[permission_key, role]] == true %>
-											<td class="text-center">
-												<input type="checkbox" class="form-check-input" name="permissions[<%= permission_key %>][<%= role %>]" value="1" <%= "checked" if checked %>>
-											</td>
-										<% end %>
-									</tr>
-								<% end %>
-							</tbody>
-						</table>
-					</div>
-
-					<div class="d-flex justify-content-end">
-						<button type="submit" class="btn btn-primary">Save Permissions</button>
-					</div>
 				<% end %>
 			</div>
-		</div>
-	<% end %>
-</div>
+		<% elsif @active_tab == 'payroll_settings' %>
+			<%= render 'payroll_settings' %>
+		<% else %>
+			<div class="card shadow-sm border-0 rounded-3">
+				<div class="card-body">
+					<%= form_with url: update_permissions_company_configs_path, method: :post, local: true do %>
+						<div class="table-responsive">
+							<table class="table table-bordered align-middle mb-3">
+								<thead class="table-light">
+									<tr>
+										<th style="min-width: 260px;">Permission</th>
+										<% CompanyConfigsController::ROLES.each do |role| %>
+											<th class="text-center text-capitalize"><%= role %></th>
+										<% end %>
+									</tr>
+								</thead>
+								<tbody>
+									<% CompanyConfigsController::PERMISSIONS.each do |permission_key| %>
+										<tr>
+											<td class="fw-semibold"><%= permission_key.humanize %></td>
+											<% CompanyConfigsController::ROLES.each do |role| %>
+												<% checked = @permission_matrix[[permission_key, role]] == true %>
+												<td class="text-center">
+													<input type="checkbox" class="form-check-input" name="permissions[<%= permission_key %>][<%= role %>]" value="1" <%= "checked" if checked %>>
+												</td>
+											<% end %>
+										</tr>
+									<% end %>
+								</tbody>
+							</table>
+						</div>
+
+						<div class="d-flex justify-content-end">
+							<button type="submit" class="btn btn-primary">Save Permissions</button>
+						</div>
+					<% end %>
+				</div>
+			</div>
+		<% end %>
+	</div>

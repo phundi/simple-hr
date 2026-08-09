@@ -19,6 +19,9 @@ class Company < ApplicationRecord
   has_many :company_configs, dependent: :destroy
   has_many :company_properties, dependent: :destroy
   has_many :role_permissions, dependent: :destroy
+  has_many :payroll_components, dependent: :destroy
+  has_many :employee_advances, dependent: :destroy
+  has_one :company_payroll_setting, dependent: :destroy
 
   has_one_attached :logo
 
@@ -56,6 +59,32 @@ class Company < ApplicationRecord
         end
       end
     end
+
+    # Seed payroll settings defaults
+    seed_company_payroll_settings_defaults
+
+    # Seed payroll components defaults
+    seed_payroll_components_defaults
+  end
+
+  def seed_company_payroll_settings_defaults
+    return if company_payroll_setting.present?
+
+    create_company_payroll_setting!(
+      tax_year: Date.current.year.to_s,
+      tax_free_threshold: 100_000,
+      house_allowance_auto: true,
+      house_allowance_rate: 0.10,
+      pension_employer_rate: 0.10,
+      pension_employee_rate: 0.05,
+      funeral_rate: 0.01,
+      tevet_rate: 0.01,
+      life_assurance_rate: 0.01,
+      pension_admin_rate: 0.003,
+      admin_vat_rate: 0.165,
+      paye_brackets: CompanyPayrollSetting::DEFAULT_BRACKETS,
+      medical_grades: {}
+    )
   end
 
   def seed_default_role_permissions
@@ -70,6 +99,32 @@ class Company < ApplicationRecord
         end
       end
     end
+  end
+
+  def seed_payroll_components_defaults
+    return unless payroll_components.empty?
+
+    # Allowances
+    payroll_components.create!(name: 'House Allowance', code: 'house_allowance', category: 'allowance', calculation_type: 'percent_basic', default_rate: 0.10)
+    payroll_components.create!(name: 'Transport', code: 'transport', category: 'allowance', calculation_type: 'fixed', default_amount: 0)
+    payroll_components.create!(name: 'Overtime', code: 'overtime', category: 'allowance', calculation_type: 'fixed', default_amount: 0)
+
+    # Employer benefits
+    payroll_components.create!(name: 'Medical', code: 'medical', category: 'employer_benefit', calculation_type: 'fixed_by_grade')
+    payroll_components.create!(name: 'Pension Employer', code: 'pension_employer', category: 'employer_benefit', calculation_type: 'percent_basic', default_rate: 0.10)
+    payroll_components.create!(name: 'Funeral Cover', code: 'funeral', category: 'employer_benefit', calculation_type: 'percent_basic', default_rate: 0.01)
+    payroll_components.create!(name: 'Tevet Levy', code: 'tevet', category: 'employer_benefit', calculation_type: 'percent_basic', default_rate: 0.01)
+    payroll_components.create!(name: 'Life Assurance', code: 'life_assurance', category: 'employer_benefit', calculation_type: 'percent_basic', default_rate: 0.01)
+    payroll_components.create!(name: 'Pension Admin', code: 'pension_admin', category: 'employer_benefit', calculation_type: 'percent_basic', default_rate: 0.003)
+    payroll_components.create!(name: 'Pension Admin VAT', code: 'pension_admin_vat', category: 'employer_benefit', calculation_type: 'percent_basic', default_rate: 0.165)
+
+    # Statutory / deductions
+    payroll_components.create!(name: 'PAYE', code: 'paye', category: 'statutory', calculation_type: 'fixed')
+    payroll_components.create!(name: 'Pension Employee', code: 'pension_employee', category: 'deduction', calculation_type: 'percent_gross', default_rate: 0.05)
+    payroll_components.create!(name: 'Salary Advance', code: 'salary_advance', category: 'deduction', calculation_type: 'fixed')
+  rescue StandardError
+    # Do not raise in seed
+    nil
   end
 
   def role_permission_defaults
@@ -106,6 +161,8 @@ class Company < ApplicationRecord
         view_reports
         manage_payroll_settings
         manage_email_templates
+        manage_payroll_components
+        view_employer_benefits
       ],
       "hr" => %w[
         manage_employees
@@ -113,6 +170,8 @@ class Company < ApplicationRecord
         create_payroll
         export_payslips
         view_reports
+        manage_payroll_components
+        view_employer_benefits
       ],
       "accountant" => %w[
         view_payroll
@@ -120,6 +179,7 @@ class Company < ApplicationRecord
         export_bank_schedule
         export_paye_schedule
         view_reports
+        view_employer_benefits
       ]
     }
   end

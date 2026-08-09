@@ -1,63 +1,192 @@
 <div class="container-xl py-4">
   <div class="card">
-    <div class="card-header">
+    <div class="card-header align-items-center">
       <h3 class="card-title">Employees</h3>
       <div class="card-actions d-flex gap-2">
         <%= link_to "Import Employees", new_import_template_path, class: "btn btn-outline-secondary" %>
-        <% if can_render?("export_employee_data") %>
-          <%= link_to "Export Employees", "#", class: "btn btn-outline-info" %>
-        <% end %>
         <% if can_render?("manage_employees") %>
+          <%= link_to "Quick Add", "#", class: "btn btn-outline-primary", data: { bs_toggle: "modal", bs_target: "#quickAddEmployeeModal" } %>
           <%= link_to "Add New", new_employee_path, class: "btn btn-primary" %>
         <% end %>
       </div>
     </div>
-    <div class="table-responsive">
-      <table class="table table-vcenter card-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Code</th>
-              <th>Department</th>
-              <th>Status</th>
-              <th class="text-end">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @employees.each do |employee| %>
-              <% status_text, status_badge_class =
-                if employee.employment_status_blocked?
-                  ["Blocked", "bg-danger-subtle text-danger"]
-                elsif employee.onboarding_status_unverified?
-                  ["Unverified", "bg-warning-subtle text-warning"]
-                else
-                  ["Active", "bg-success-subtle text-success"]
-                end %>
-              <tr>
-                <td data-label="Name">
-                  <div class="fw-semibold"><%= [employee.first_name, employee.last_name].compact.join(" ").presence || "-" %></div>
-                </td>
-                <td data-label="Code"><%= employee.employee_code.presence || "-" %></td>
-                <td data-label="Department"><%= employee.department.presence || "Unassigned" %></td>
-                <td data-label="Status">
-                  <span class="badge <%= status_badge_class %>"><%= status_text %></span>
-                </td>
-                <td data-label="Actions" class="text-end">
-                  <div class="d-flex flex-wrap gap-2 justify-content-end">
-                    <%= link_to "View", employee_path(employee), class: "btn btn-sm btn-outline-secondary" %>
-                    <%= link_to "Edit", edit_employee_path(employee), class: "btn btn-sm btn-outline-primary" %>
-                    <% if employee.employment_status_blocked? %>
-                      <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#employeeBlockModal-<%= employee.id %>">Unblock</button>
-                    <% else %>
-                      <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#employeeBlockModal-<%= employee.id %>">Block</button>
-                    <% end %>
-                    <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#employeeDeleteModal-<%= employee.id %>">Delete</button>
-                  </div>
-                </td>
+
+    <div class="card-body">
+      <%= form_with url: employees_path, method: :get, local: true, class: 'row gx-2 gy-2 align-items-end mb-3' do %>
+        <div class="col-md-3">
+          <div class="input-icon">
+            <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+            <%= text_field_tag :q, params[:q], placeholder: 'Search name or code', class: 'form-control form-control-sm ps-10' %>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <%= select_tag :department, options_for_select([['All','']] + @departments.map { |d| [d, d] }, params[:department]), class: 'form-select form-select-sm' %>
+        </div>
+        <div class="col-md-2">
+          <%= select_tag :status, options_for_select([['Any',''], ['Active','active'], ['Blocked','blocked'], ['Unverified','unverified']], params[:status]), class: 'form-select form-select-sm' %>
+        </div>
+        <div class="col-md-2">
+          <%= select_tag :pay_period_id, options_from_collection_for_select(@pay_periods, :id, ->(pp){ "#{Date::MONTHNAMES[pp.month]} #{pp.year}" }, params[:pay_period_id]), include_blank: 'Current', class: 'form-select form-select-sm', onchange: 'this.form.submit()' %>
+        </div>
+        <div class="col-md-2 d-grid">
+          <%= submit_tag 'Filter', class: 'btn btn-primary btn-sm' %>
+        </div>
+      <% end %>
+
+      <% if @current_pay_period %>
+        <div class="mb-3">
+          <div class="d-flex flex-wrap gap-3 align-items-center">
+            <div><strong>Total Gross:</strong> <%= money(@totals[:gross], company: current_company) %></div>
+            <div><strong>Total Net:</strong> <%= money(@totals[:net], company: current_company) %></div>
+            <div><strong>Total PAYE:</strong> <%= money(@totals[:paye], company: current_company) %></div>
+          </div>
+        </div>
+      <% end %>
+
+      <% if @employees.exists? %>
+        <%# Bulk action bar is shown at the bottom when rows are selected %>
+
+        <div class="table-responsive">
+          <table class="table table-vcenter table-nowrap table-hover card-table">
+            <thead>
+              <tr class="text-muted small">
+                <th style="width:1%"><input type="checkbox" id="select_all_employees" /></th>
+                <th><%= link_to 'Name', employees_path(request.query_parameters.merge(sort: 'name', direction: @sort_column == 'name' && @sort_direction == 'asc' ? 'desc' : 'asc')), class: 'text-reset' %></th>
+                <th><%= link_to 'Code', employees_path(request.query_parameters.merge(sort: 'employee_code', direction: @sort_column == 'employee_code' && @sort_direction == 'asc' ? 'desc' : 'asc')), class: 'text-reset' %></th>
+                <th>Department</th>
+                <th>Position</th>
+                <th class="text-end"><%= link_to 'Basic Salary', employees_path(request.query_parameters.merge(sort: 'salary', direction: @sort_column == 'salary' && @sort_direction == 'asc' ? 'desc' : 'asc')), class: 'text-reset' %></th>
+                <% if @current_pay_period %>
+                  <th class="text-end">Gross</th>
+                  <th class="text-end">Net</th>
+                <% end %>
+                <th>Payment</th>
+                <th>Status</th>
+                <th class="text-end">Actions</th>
               </tr>
+            </thead>
+            <tbody>
+              <% @employees.each do |employee| %>
+                <% initials = [employee.first_name.to_s.first, employee.last_name.to_s.first].compact.join.upcase.presence || employee.employee_code.to_s[0..1] %>
+                <% payroll_eligible = employee.employment_status == 'active' && employee.onboarding_status == 'verified' %>
+                <% payslip = @payslips_map[employee.id] %>
+                <tr>
+                  <td><input type="checkbox" class="employee-checkbox" value="<%= employee.id %>" /></td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="avatar avatar-sm rounded-circle bg-primary-lt text-primary d-inline-flex align-items-center justify-content-center" style="width:36px;height:36px" title="<%= [employee.first_name, employee.last_name].compact.join(' ').strip %>" ><%= initials %></div>
+                      <div>
+                        <div class="fw-semibold"><%= [employee.first_name, employee.last_name].compact.join(' ').presence || '-' %></div>
+                        <div class="text-muted small"><%= employee.department.presence || employee.mobile_money_number.presence || employee.user&.email.presence || employee.employee_code.presence || '-' %></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><%= employee.employee_code.presence || '-' %></td>
+                  <td><%= employee.department.presence || 'Unassigned' %></td>
+                  <td><%= employee.job_title.presence || '-' %></td>
+                  <td class="text-end">
+                    <% if can_render?("view_employee_sensitive") %>
+                      <%= money(employee.salary || 0, company: current_company) %>
+                    <% else %>
+                      ****
+                    <% end %>
+                  </td>
+                  <% if @current_pay_period %>
+                    <% gross_value = @payslips_map[employee.id]&.gross || employee.salary %>
+                    <% net_value = @payslips_map[employee.id]&.net %>
+                    <td class="text-end"><%= money(gross_value, company: current_company) %></td>
+                    <td class="text-end">
+                      <% if net_value.present? %>
+                        <%= money(net_value, company: current_company) %>
+                      <% else %>
+                        <div class="d-flex flex-column align-items-end gap-1">
+                          <span class="text-muted">Not added</span>
+                          <%= link_to 'Add to Payroll', new_import_template_path, class: 'btn btn-outline-primary btn-sm' %>
+                        </div>
+                      <% end %>
+                    </td>
+                  <% end %>
+                  <td>
+                    <% case employee.payment_method %>
+                    <% when 'bank' %>
+                      <span class="badge bg-blue-lt text-blue"><i class="ti ti-building-bank me-1"></i>Bank</span>
+                    <% when 'mobile_money' %>
+                      <span class="badge bg-green-lt text-green"><i class="ti ti-device-mobile me-1"></i>Mobile</span>
+                    <% when 'cash' %>
+                      <span class="badge bg-yellow-lt text-yellow"><i class="ti ti-cash me-1"></i>Cash</span>
+                    <% else %>
+                      <span class="badge bg-gray-lt text-muted">-</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <% if employee.employment_status == 'blocked' %>
+                        <span class="rounded-circle d-inline-flex" style="width:10px;height:10px;background:#dc3545;"></span>
+                        <span>Blocked</span>
+                      <% elsif employee.onboarding_status == 'unverified' %>
+                        <span class="rounded-circle d-inline-flex" style="width:10px;height:10px;background:#f59f00;"></span>
+                        <span>Unverified</span>
+                      <% else %>
+                        <span class="rounded-circle d-inline-flex" style="width:10px;height:10px;background:#198754;"></span>
+                        <span>Active</span>
+                      <% end %>
+                      <% if payroll_eligible %>
+                        <span class="badge bg-blue-lt text-blue ms-2">Payroll</span>
+                      <% end %>
+                    </div>
+                  </td>
+                  <td class="text-end">
+                    <% payroll_link = Rails.application.routes.routes.any? { |r| r.name == 'employee_payroll' } ? employee_payroll_path(employee) : employee_path(employee) %>
+                    <div class="btn-list justify-content-end align-items-center">
+                      <%= link_to 'View Payroll', payroll_link, class: 'btn btn-sm btn-outline-secondary' %>
+                      <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">More</button>
+                        <div class="dropdown-menu dropdown-menu-end">
+                          <%= link_to 'Edit', edit_employee_path(employee), class: 'dropdown-item' %>
+                          <% if employee.employment_status == 'blocked' %>
+                            <%= button_to 'Unblock', unblock_employee_path(employee), method: :patch, form: { class: 'd-inline' }, class: 'dropdown-item' %>
+                          <% else %>
+                            <%= button_to 'Block', block_employee_path(employee), method: :patch, form: { class: 'd-inline' }, class: 'dropdown-item' %>
+                          <% end %>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="bulk-actions-bar" class="d-none fixed-bottom start-0 end-0 bg-body border-top py-3 shadow-lg" style="z-index: 1050;">
+          <div class="container-xl d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <span id="bulk-actions-count" class="fw-semibold">0 selected</span>
+              <span class="text-muted">Choose an action for selected employees.</span>
+            </div>
+            <div>
+              <form id="bulk-actions" action="<%= bulk_action_employees_path %>" method="post" class="d-flex gap-2 align-items-center">
+                <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+                <%= hidden_field_tag :employee_ids, '', id: 'bulk_employee_ids' %>
+                <%= select_tag :bulk_action, options_for_select([['Add to Payroll','add_to_payroll'], ['Export Selected','export'], ['Block','block'], ['Unblock','unblock']]), class: 'form-select form-select-sm', style: 'width:190px' %>
+                <%= submit_tag 'Apply', class: 'btn btn-sm btn-primary' %>
+              </form>
+            </div>
+          </div>
+        </div>
+      <% else %>
+        <div class="text-center py-6">
+          <img src="/assets/empty-employees.svg" alt="No employees" style="max-width:240px;margin:auto;" />
+          <h4 class="mt-3">No employees yet</h4>
+          <p class="text-muted">Add employees quickly using Quick Add or import via Excel.</p>
+          <div class="d-flex justify-content-center gap-2 mt-3">
+            <%= link_to 'Import Excel', new_import_template_path, class: 'btn btn-outline-secondary' %>
+            <% if can_render?("manage_employees") %>
+              <%= link_to 'Quick Add Employee', '#', class: 'btn btn-primary', data: { bs_toggle: 'modal', bs_target: '#quickAddEmployeeModal' } %>
             <% end %>
-          </tbody>
-      </table>
+          </div>
+        </div>
+      <% end %>
     </div>
   </div>
 
@@ -106,4 +235,52 @@
       </div>
     </div>
   <% end %>
+
+  <%= render 'quick_add_modal' if can_render?("manage_employees") %>
 </div>
+
+<script>
+  document.addEventListener('turbo:load', function() {
+    const selectAll = document.getElementById('select_all_employees')
+    const checkboxes = Array.from(document.querySelectorAll('.employee-checkbox'))
+    const bulkForm = document.getElementById('bulk-actions')
+    const bulkIds = document.getElementById('bulk_employee_ids')
+    const bulkBar = document.getElementById('bulk-actions-bar')
+    const bulkCount = document.getElementById('bulk-actions-count')
+
+    const updateBulkBar = () => {
+      const selected = checkboxes.filter(cb => cb.checked)
+      if (selected.length > 0) {
+        bulkBar.classList.remove('d-none')
+        bulkCount.textContent = `${selected.length} selected`
+      } else {
+        bulkBar.classList.add('d-none')
+      }
+    }
+
+    if (selectAll) {
+      selectAll.addEventListener('change', function(e) {
+        checkboxes.forEach(cb => cb.checked = e.target.checked)
+        updateBulkBar()
+      })
+    }
+
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', updateBulkBar)
+    })
+
+    if (bulkForm) {
+      bulkForm.addEventListener('submit', function(e) {
+        const selected = checkboxes.filter(cb => cb.checked).map(cb => cb.value)
+        if (selected.length === 0) {
+          e.preventDefault()
+          alert('Please select at least one employee')
+          return
+        }
+        bulkIds.value = selected.join(',')
+      })
+    }
+
+    updateBulkBar()
+  })
+</script>

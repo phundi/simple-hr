@@ -23,14 +23,42 @@
 
     <div class="collapse navbar-collapse" id="top-navbar-menu">
       <ul class="navbar-nav me-auto">
-        <% if current_user&.super_admin? %>
-        <% else %>
-          <li class="nav-item"><%= link_to "Employees", employees_path, class: "nav-link" %></li>
+        <% unless current_user&.super_admin? %>
+          <% payroll_active = controller_name.in?(%w[pay_periods payslips import_templates payroll_imports]) || request.path.include?('pay_period') || request.path.include?('payslip') || request.path.include?('payroll') %>
+          <% reports_active = controller_name == 'bank_payment_schedule' || request.path.include?('report') %>
+
+          <li class="nav-item">
+            <%= link_to "Dashboard", company_dashboard_path, class: "nav-link #{'active fw-bold' if controller_name == 'dashboard'}" %>
+          </li>
+
+          <li class="nav-item">
+            <%= link_to "Employees", employees_path, class: "nav-link #{'active fw-bold' if controller_name == 'employees'}" %>
+          </li>
+
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle #{'active fw-bold' if payroll_active}" href="#" data-bs-toggle="dropdown">Payroll</a>
+            <div class="dropdown-menu">
+              <% if Rails.application.routes.routes.any? { |r| r.name == 'pay_periods' } %>
+                <%= link_to 'Pay Periods', pay_periods_path, class: 'dropdown-item' %>
+              <% else %>
+                <%= link_to 'Pay Periods', payroll_path, class: 'dropdown-item' %>
+              <% end %>
+              <%= link_to 'Import Payroll', new_import_template_path, class: 'dropdown-item' %>
+            </div>
+          </li>
+
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle #{'active fw-bold' if reports_active}" href="#" data-bs-toggle="dropdown">Reports</a>
+            <div class="dropdown-menu">
+              <%= link_to 'Bank Schedule', bank_payment_schedule_report_path, class: 'dropdown-item' %>
+            </div>
+          </li>
+
           <% if can_render?("manage_users") %>
-            <li class="nav-item"><%= link_to "Users", users_path, class: "nav-link" %></li>
+            <li class="nav-item">
+              <%= link_to "Users", users_path, class: "nav-link #{'active fw-bold' if controller_name == 'users'}" %>
+            </li>
           <% end %>
-          <li class="nav-item"><%= link_to "Payroll", payroll_path, class: "nav-link" %></li>
-          <li class="nav-item"><%= link_to "Import", new_import_template_path, class: "nav-link" %></li>
         <% end %>
       </ul>
 

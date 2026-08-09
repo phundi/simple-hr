@@ -3,9 +3,11 @@ module ApplicationHelper
     current_user&.can?(perm)
   end
 
-  def money(amount, company: nil, precision: 2)
+  def money(amount, company: nil)
     symbol = company&.currency_symbol.presence || "MK"
     value = amount || 0
+    value = value.to_d
+    precision = value.frac.zero? ? 0 : 2
 
     "#{symbol} #{number_with_precision(value, precision: precision, delimiter: ",", separator: ".")}"
   end

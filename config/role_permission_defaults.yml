@@ -2,6 +2,8 @@
 roles:
   admin:
   - create_payroll
+  - manage_payroll_components
+  - view_employer_benefits
   - delete_payroll
   - edit_payroll
   - export_bank_schedule
@@ -20,6 +22,8 @@ roles:
   - view_reports
   hr:
   - create_payroll
+  - manage_payroll_components
+  - view_employer_benefits
   - delete_payroll
   - edit_payroll
   - export_employee_data
@@ -33,6 +37,7 @@ roles:
   - view_reports
   accountant:
   - create_payroll
+  - view_employer_benefits
   - export_bank_schedule
   - export_paye_schedule
   - process_payroll

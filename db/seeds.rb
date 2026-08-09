@@ -134,6 +134,28 @@ ActiveRecord::Base.transaction do
   demo_company = Company.find_or_create_by!(subdomain: "demo", name: "Demo Company")
   demo_company.update_columns(name: "Demo Company", primary_color: "#206bc4")
 
+  # Ensure payroll components and defaults are seeded for demo
+  begin
+    demo_company.send(:seed_company_defaults)
+  rescue StandardError
+    demo_company.reload
+  end
+
+  # Seed company payroll settings with Malawi sample rates
+  demo_company.create_company_payroll_setting! unless demo_company.company_payroll_setting
+  demo_company.company_payroll_setting.update(
+    house_allowance_rate: 0.10,
+    pension_employer_rate: 0.10,
+    pension_employee_rate: 0.05,
+    funeral_rate: 0.01,
+    tevet_rate: 0.01,
+    life_assurance_rate: 0.01,
+    pension_admin_rate: 0.003,
+    admin_vat_rate: 0.165,
+    paye_brackets: MalawiPayeCalculator::DEFAULT_BRACKETS,
+    medical_grades: {}
+  )
+
   demo_emails = [ "admin@demo.com", "hr@demo.com", "login@demo.com", "accountant@demo.com", "accounts@demo.com", "employee@demo.com" ]
 
   # Reset demo tenant user/employee/payroll data when rerunning seeds.
@@ -186,8 +208,12 @@ ActiveRecord::Base.transaction do
   departments = [ "HR", "Finance", "IT" ]
   job_roles = [ "Manager", "Staff" ]
 
-  employees = 5.times.map do |index|
-    payment_method = index.even? ? :bank : :cash
+  # Create eight demo employees with Malawi-like salaries (from PAYROLL_Template sample)
+  demo_salaries = [3_051_000, 1_886_230, 1_500_000, 1_200_000, 950_000, 800_000, 600_000, 450_000]
+  demo_projects = ['Project A', 'Project B', 'Project A', 'Project C', 'Project B', 'Project A', 'Project D', 'Project B']
+
+  employees = demo_salaries.each_with_index.map do |sal, index|
+    payment_method = index.even? ? :bank : :bank
     attrs = {
       company: demo_company,
       employee_code: format("DEMO%03d", index + 1),
@@ -195,7 +221,7 @@ ActiveRecord::Base.transaction do
       last_name: Faker::Name.last_name,
       department: departments[index % departments.length],
       job_title: job_roles[index % job_roles.length],
-      salary: (1500 + (index * 250)),
+      salary: sal,
       payment_method: payment_method,
       employment_status: :active,
       onboarding_status: :verified
@@ -209,30 +235,49 @@ ActiveRecord::Base.transaction do
     Employee.create!(attrs)
   end
 
-  period = PayPeriod.find_or_create_by!(company: demo_company, month: Date.current.month, year: Date.current.year) do |pay_period|
-    pay_period.status = :published
-    pay_period.total_gross = 0
-    pay_period.total_net = 0
+  # Create May 2024 pay period (draft) and compute payslips using service to match sample
+  period = PayPeriod.find_or_create_by!(company: demo_company, month: 5, year: 2024) do |pay_period|
+    pay_period.status = :draft
   end
-
-  period.update!(status: :published, total_gross: 0, total_net: 0)
 
   total_gross = 0.to_d
   total_net = 0.to_d
 
-  employees.first(2).each do |employee|
-    gross = employee.salary.to_d
-    deductions = (gross * 0.12).round(2)
-    net = gross - deductions
+  employees.each_with_index do |employee, idx|
+    # assign project
+    employee.update!(project: demo_projects[idx]) if employee.respond_to?(:project)
+    employee_struct = Struct.new(:salary, :medical_grade).new(BigDecimal(employee.salary.to_s), employee.respond_to?(:medical_grade) ? employee.medical_grade : nil)
+    settings = demo_company.company_payroll_setting ? {
+      house_allowance_rate: demo_company.company_payroll_setting.house_allowance_rate,
+      pension_employee_rate: demo_company.company_payroll_setting.pension_employee_rate,
+      pension_employer_rate: demo_company.company_payroll_setting.pension_employer_rate,
+      funeral_rate: demo_company.company_payroll_setting.funeral_rate,
+      tevet_rate: demo_company.company_payroll_setting.tevet_rate,
+      life_assurance_rate: demo_company.company_payroll_setting.life_assurance_rate,
+      pension_admin_rate: demo_company.company_payroll_setting.pension_admin_rate,
+      admin_vat_rate: demo_company.company_payroll_setting.admin_vat_rate,
+      paye_brackets: demo_company.company_payroll_setting.paye_brackets || MalawiPayeCalculator::DEFAULT_BRACKETS,
+      medical_grades: demo_company.company_payroll_setting.medical_grades || {}
+    } : {}
 
-    Payslip.find_or_create_by!(pay_period: period, employee: employee) do |payslip|
-      payslip.gross = gross
-      payslip.deductions = deductions
-      payslip.net = net
-    end
+    computation = PayrollComputationService.new(employee_struct, period, settings, employee.employee_advances, employee.employee_payroll_components).call
 
-    total_gross += gross
-    total_net += net
+    payslip = Payslip.find_or_initialize_by(pay_period: period, employee: employee)
+    payslip.basic_salary = computation[:basic_salary]
+    payslip.allowances = computation[:allowances]
+    payslip.employer_benefits = computation[:employer_benefits]
+    payslip.total_employer_benefits = computation[:total_employer_benefits]
+    payslip.total_remuneration = computation[:total_remuneration]
+    payslip.taxable_income = computation[:taxable_income]
+    payslip.paye = computation[:deductions_breakdown][:paye]
+    payslip.pension_employee = computation[:deductions_breakdown][:pension_employee]
+    payslip.gross = computation[:gross_income]
+    payslip.net = computation[:net_pay]
+    payslip.deductions_breakdown = computation[:deductions_breakdown]
+    payslip.save!
+
+    total_gross += payslip.gross.to_d
+    total_net += payslip.net.to_d
   end
 
   period.update!(total_gross: total_gross, total_net: total_net)

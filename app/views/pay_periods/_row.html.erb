@@ -1,0 +1,8 @@
+<tr id="payslip_<%= payslip.id %>">
+  <td><%= payslip.employee.full_name %></td>
+  <td class="text-end"><%= money(payslip.basic_salary || payslip.gross) %></td>
+  <td class="text-end"><%= money((payslip.employer_benefits || {}).values.sum rescue 0) %></td>
+  <td class="text-end"><%= money(payslip.gross) %></td>
+  <td class="text-end"><%= money(payslip.paye || (payslip.deductions || 0)) %></td>
+  <td class="text-end"><%= money(payslip.net) %></td>
+</tr>

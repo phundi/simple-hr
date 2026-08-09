@@ -28,6 +28,16 @@ class DashboardController < ApplicationController
     @export_pay_periods = @company.pay_periods.order(year: :desc, month: :desc)
     @payroll_this_month = @current_pay_period&.total_net.to_d
 
+    if can_render?("view_reports") && @current_pay_period
+      @total_paye_this_month = @current_pay_period.payslips.sum(:paye) || 0.to_d
+      @total_pension_this_month = @current_pay_period.payslips.sum(:pension_employee) || 0.to_d
+      @total_employer_benefits_cost = @current_pay_period.payslips.sum(:total_employer_benefits) || 0.to_d
+    else
+      @total_paye_this_month = 0.to_d
+      @total_pension_this_month = 0.to_d
+      @total_employer_benefits_cost = 0.to_d
+    end
+
     @payroll_trend = payroll_trend_data(@company)
     @employees_by_department = employees_by_department_data(@company)
   end
